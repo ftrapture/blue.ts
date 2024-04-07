@@ -12,10 +12,17 @@ Blue.ts is a powerful TypeScript package designed to supercharge your Discord bo
 - Supports latest Lavalink version: 4.0.4.
 - Compatible with any version of discord.js (only).
 
+## Requirements
+
+- [Node](https://nodejs.org/en/download) Version: >= 16.9.0
+- A Lavalink server, here are some free lavalink server: [Click Me](https://lavalink.darrennathanael.com/)
+- Discord Bot [token](https://discord.com/developers/applications) to get started.
+
 ## Installation
 
 ```bash
 npm install blue.ts@latest
+npm install discord@13
 ```
 
 ## Quick Start With Djs 13
