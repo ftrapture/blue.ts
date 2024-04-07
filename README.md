@@ -214,3 +214,5 @@ For any inquiries or issues, feel free to [open an issue](https://github.com/ftr
 ## License
 
 This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
+
+By [Rapture](https://github.com/ftrapture)
