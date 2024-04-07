@@ -29,7 +29,7 @@ npm install discord.js@13
 
 ```javascript
 const { Client, Intents } = require("discord.js");
-const { Blue, Events } = require("discord.blue.js");
+const { Blue, Events } = require("lava.blue.js");
 
 const client = new Client({
   failIfNotExists: false,
