@@ -10,7 +10,7 @@ Blue.js is a powerful TypeScript/Javascript package designed to supercharge your
 - Autoplay feature.
 - Faster and stable client.
 - Supports latest Lavalink version: 4.0.4.
-- Compatible with any version of discord.js v13 and v14 (only).
+- Compatible with discord.js v13 and v14 (only).
 
 ## Requirements
 
