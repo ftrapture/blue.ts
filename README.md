@@ -22,7 +22,7 @@ Blue.js is a powerful TypeScript/Javascript package designed to supercharge your
 
 ```bash
 npm install blue.ts@latest
-npm install discord@13
+npm install discord.js@13
 ```
 
 ## Quick Start With Djs 13
