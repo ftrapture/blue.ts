@@ -1,5 +1,5 @@
 {
-  "name": "bluets",
+  "name": "discord.blue.js",
   "version": "4.0.0",
   "description": "a simple but effective lavalink wrapper class developed in node.js",
   "main": "build/index.js",
