@@ -1,6 +1,6 @@
-# Blue.ts
+# Blue.js
 
-Blue.ts is a powerful TypeScript package designed to supercharge your Discord bot with seamless integration for Lavalink servers. Empower your bot to effortlessly play music in voice channels, enhancing your community's audio experience.
+Blue.js is a powerful TypeScript/Javascript package designed to supercharge your Discord bot with seamless integration for Lavalink servers. Empower your bot to effortlessly play music in voice channels, enhancing your community's audio experience.
 
 ## Features
 
