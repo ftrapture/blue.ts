@@ -1,6 +1,6 @@
 # Blue.js
 
-Blue.js is a powerful TypeScript/Javascript package designed to supercharge your Discord bot with seamless integration for Lavalink servers. Empower your bot to effortlessly play music in voice channels, enhancing your community's audio experience.
+Blue.ts is a powerful simple but effective stable lavalink client developed in typescript.
 
 ## Features
 
@@ -21,8 +21,10 @@ Blue.js is a powerful TypeScript/Javascript package designed to supercharge your
 ## Installation
 
 ```bash
-npm install lava.blue.js@latest
-npm install discord.js@13
+# npm add
+npm install blue.ts
+# yarn add
+yarn add blue.ts
 ```
 
 ## Quick Start With Djs 13
@@ -72,17 +74,17 @@ const client = new Client({
 
 const nodes = [
   {
-    host: "lavalink4-frankfurt.alfari.id",
-    port: 443,
-    password: "catfein",
-    secure: true
+    host: "localhost",
+    port: 2333,
+    password: "youshallnotpass",
+    secure: false
   }
 ];
 
 const options = {
   spotify: {
-    client_id: "c46d6ce4936c41c6979f6d00eb2a6dd2",
-    client_secret: "30a6c17b7fd64d4485b68c651d21b72f"
+    client_id: "c46d6ce4936c41c6979f...", //Spotify client id
+    client_secret: "30a6c17b7fd64d448..." //Spotify client secret
   },
   autoplay: true
 };
