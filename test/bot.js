@@ -1,5 +1,5 @@
 const { Client, Intents } = require("discord.js");
-const { Blue, Events, Types } = require("blue.ts");
+const { Blue, Events } = require("lava.blue.js");
 
 const client = new Client({
   failIfNotExists: false,
@@ -32,7 +32,7 @@ const client = new Client({
   presence: {
     activities: [
       {
-        name: 'Blue.ts',
+        name: 'Blue.js',
         type: "LISTENING",
       },
     ],
@@ -42,17 +42,17 @@ const client = new Client({
 
 const nodes = [
   {
-    host: "lavalink4-frankfurt.alfari.id",
-    port: 443,
-    password: "catfein",
-    secure: true
+    host: "localhost",
+    port: 2333,
+    password: "youshallnotpass",
+    secure: false
   }
 ];
 
 const options = {
   spotify: {
-    client_id: "c46d6ce4936c41c6979f6d00eb2a6dd2",
-    client_secret: "30a6c17b7fd64d4485b68c651d21b72f"
+    client_id: "c46d6ce4936c41c6979f...", //Spotify client id
+    client_secret: "30a6c17b7fd64d448..." //Spotify client secret
   },
   autoplay: true
 };
@@ -109,8 +109,8 @@ client.on("messageCreate", async (message) => {
       });
     const res = await client.manager.search({ query: query }, message.author).catch(() => null);
     if (!res) return message.reply("song not found");
-    if (res.loadType === Types.LOAD_SP_PLAYLISTS || res.loadType === Types.LOAD_SP_ALBUMS) {
-      player.queue.add(...res.tracks);
+    if (res.loadType == "SPOTIFY_ALBUMS" || res.loadType == "SPOTIFY_PLAYLISTS") {
+      player.queue.add(res.tracks);
     } else {
       player.queue.add(res.tracks[0]);
     }
