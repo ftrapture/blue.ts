@@ -31,7 +31,7 @@ yarn add blue.ts
 
 ```javascript
 const { Client, Intents } = require("discord.js");
-const { Blue, Events } = require("lava.blue.js");
+const { Blue, Events } = require("blue.ts");
 
 const client = new Client({
   failIfNotExists: false,
