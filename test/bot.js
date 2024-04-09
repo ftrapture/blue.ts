@@ -1,5 +1,5 @@
 const { Client, Intents } = require("discord.js");
-const { Blue, Events } = require("lava.blue.js");
+const { Blue, Events, Types } = require("lava.blue.js");
 
 const client = new Client({
   failIfNotExists: false,
@@ -109,8 +109,8 @@ client.on("messageCreate", async (message) => {
       });
     const res = await client.manager.search({ query: query }, message.author).catch(() => null);
     if (!res) return message.reply("song not found");
-    if (res.loadType == "SPOTIFY_ALBUMS" || res.loadType == "SPOTIFY_PLAYLISTS") {
-      player.queue.add(res.tracks);
+    if (res.loadType === Types.LOAD_SP_PLAYLISTS || res.loadType === Types.LOAD_SP_ALBUMS) {
+      player.queue.add(...res.tracks);
     } else {
       player.queue.add(res.tracks[0]);
     }
