@@ -1,5 +1,5 @@
 const { Client, Intents } = require("discord.js");
-const { Blue, Events, Types } = require("lava.blue.js");
+const { Blue, Events, Types } = require("blue.ts");
 
 const client = new Client({
   failIfNotExists: false,
