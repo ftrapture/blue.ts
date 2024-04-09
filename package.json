@@ -1,7 +1,7 @@
 {
-  "name": "lava.blue.js",
+  "name": "blue.ts",
   "version": "4.0.0",
-  "description": "a simple but effective lavalink wrapper class developed in node.js",
+  "description": "A simple but effective lavalink client developed in node.js",
   "main": "build/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,12 +22,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ftrapture/blue.js.git"
+    "url": "git+https://github.com/ftrapture/blue.ts.git"
   },
   "bugs": {
-    "url": "https://github.com/ftrapture/blue.js/issues"
+    "url": "https://github.com/ftrapture/blue.ts/issues"
   },
-  "homepage": "https://github.com/ftrapture/blue.js#readme",
+  "homepage": "https://github.com/ftrapture/blue.ts#readme",
   "dependencies": {
     "axios": "^1.6.2",
     "discord.js": "^13.7.0",
