@@ -32,7 +32,8 @@
     "axios": "^1.6.2",
     "discord.js": "^13.7.0",
     "undici": "^5.28.2",
-    "ws": "^8.14.2"
+    "ws": "^8.14.2",
+    "blue.ts": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.12.5"
