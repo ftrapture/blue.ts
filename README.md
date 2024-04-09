@@ -1,4 +1,4 @@
-# Blue.js
+# Blue.ts
 
 Blue.ts is a powerful simple but effective stable lavalink client developed in typescript.
 
