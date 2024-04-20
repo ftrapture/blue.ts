@@ -2,7 +2,7 @@
   "name": "blue.ts",
   "version": "1.0.0",
   "description": "A simple but effective lavalink client developed in node.js",
-  "main": "build/index.js",
+  "main": "./index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
