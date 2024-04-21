@@ -129,8 +129,7 @@ class Blue extends EventEmitter {
     if(!this.isInitiated) throw new Error("Blue has not been initiated yet.");
     const check = this.util.checkObjectValidity(options);
     if (!check) return false;
-    let node = this.nodes.get(this.options.host)
-    if (!node) throw new TypeError("No nodes are avalible");
+    if (!this.node) throw new TypeError("No nodes are available");
     const player = this.node!.rest.createPlayer(options);
     player.connect();
     return player;
@@ -178,14 +177,14 @@ class Blue extends EventEmitter {
       return this.addNode(node);
     let nodes = this._nodes.filter(n => n.host !== this.node?.info?.host);
     let get_active_nodes = nodes.filter(n => this.nodes.get(n?.host)?.connected);
-    if (get_active_nodes) {
+    if (get_active_nodes.length > 0) {
       return this.activateNode(get_active_nodes);
     }
     throw new Error("There are no active nodes are available.");
   }
 
   public handleEvents(payload: any): void {
-    if (!payload.guildId) throw new Error(`Unknown payload recieved.`);
+    if (!payload.guildId) throw new Error(`Unknown payload received.`);
     const player = this.players.get(payload.guildId);
     if (!player || !player?.queue?.current) return;
     const track = player.queue.current?.info;
