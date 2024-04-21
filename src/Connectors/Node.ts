@@ -143,7 +143,7 @@ class Node {
         this.blue.emit(Events.api, `[${String("DEBUG").Blue()}]: ${this.info.host} ---> [${String("RECEIVED: READY PAYLOAD").Green()}] ---> ${String(`${JSON.stringify(packet)}`).Yellow()}`);
         this.rest.setSession(this.sessionId || "none");
         if (this.resumeKey) {
-          await this.rest.patch(`/v4/sessions/${this.sessionId}`, { resumingKey: this.resumeKey, timeout: this.playerUpdate });
+          await this.rest.patch(`/v4/sessions/${this.sessionId}`, { resuming: !!this.resumeKey || false, timeout: this.playerUpdate });
         }
         break;
       case "playerUpdate":
