@@ -43,14 +43,14 @@ const nodes = [
     {
         host: "localhost",
         port: 6969,
-        password: "Ares",
+        password: "youshallnotpass",
         secure: false
     }
 ];
 const options = {
     spotify: {
-        client_id: "c46d6ce4936c41c6979f6d00eb2a6dd2",
-        client_secret: "30a6c17b7fd64d4485b68c651d21b72f"
+        client_id: "CLIENT_ID",
+        client_secret: "CLIENT_SECRET"
     }
 };
 client.manager = new Blue(nodes, options);
