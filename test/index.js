@@ -126,4 +126,4 @@ client.on("messageCreate", async (message) => {
         return message.reply("alr player position sets to "+player.position);
     }
 })
-client.login("MTE1MjYxMDI5ODU3NDkzODIwMw.GAt3RJ.WyK4-qsK70PPvTOxs9m0nMIVh1t8kYtMLTnHSQ")
+client.login("TOKEN")
