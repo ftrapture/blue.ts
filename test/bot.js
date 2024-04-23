@@ -173,4 +173,4 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-client.login("BOT_TOKEN"); //Bot Token
+client.login("BOT_TOKEN"); //Discord Bot Token
