@@ -1,3 +1,5 @@
+//test bot
+
 const { Client, Intents } = require("discord.js");
 const { Blue, Events, Types, Library } = require("blue.ts");
 
