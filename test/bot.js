@@ -45,7 +45,7 @@ const client = new Client({
 const nodes = [
   {
     host: "localhost",
-    port: 2333
+    port: 2333,
     password: "youshallnotpass",
     secure: false
   }
