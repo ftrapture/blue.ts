@@ -166,7 +166,7 @@ client.on("messageCreate", async (message) => {
     const res = await client.manager.search({ query: query }, message.author).catch(() => null);
     if (!res) return message.reply("song not found");
     if (res.loadType == Types.LOAD_SP_ALBUMS || res.loadType == Types.LOAD_SP_PLAYLISTS) {
-      player.queue.add(...res.tracks);
+      player.queue.add(...res.items);
     } else {
       player.queue.add(res.tracks[0]);
     }
