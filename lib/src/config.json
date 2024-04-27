@@ -1,0 +1,13 @@
+{
+    "client_name": "blue.ts",
+    "version": "1.2.1",
+    "default_platform": "youtube",
+    "developer": {
+        "name": "rapture.69",
+        "description": "A 19yo guy with 3.5 years of experience as a javascript developer"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ftrapture/blue.ts"
+    }
+}
