@@ -1,6 +1,25 @@
 import axios from "axios";
 import Queue from "../Manager/QueueManager";
 
+interface Track {
+    trackToken: string | null,
+    info: {
+        identifier: string | null | undefined,
+        author: string | null | undefined,
+        length: number | null | undefined,
+        isStream: boolean | null | undefined,
+        title: string | null | undefined,
+        uri: string | null | undefined,
+        sourceName: string | null | undefined,
+        position: number | null | undefined,
+        artworkUrl: string | null | undefined,
+        isrc: string | number | null | undefined,
+    },
+    pluginInfo: any,
+    type: string,
+    userData: any
+}
+
 class Spotify {
     public readonly blue: any;
     public readonly client_id: string | boolean;
@@ -62,13 +81,25 @@ class Spotify {
                             'Authorization': `Bearer ${this.accessToken}`,
                         },
                     });
-                    let albums: string[] = [];
+                    let albums: any[] = [];
                     res.data.tracks.items.map(async (d: any) => {
                         if (d.name && d.artists?.length)
-                            albums.push(`${d.name} ${d.artists.map((n: any) => n.name).join(" ")}`);
+                            albums.push(this.buildTrack({
+                                title: `${d.name}`,
+                                author: `${d.artists.map((n: any) => n.name).join(" ")}`,
+                                id: d.id,
+                                isrc: null,
+                                duration: d.duration_ms,
+                                url: d.external_urls.spotify,
+                                type: "album"
+                            }));
                     });
                     return {
-                        album: albums
+                        name: res.data.name,
+                        type: "album_track",
+                        url: res.data.external_urls.spotify,
+                        length: albums.length,
+                        items: albums
                     };
 
                 case 'track':
@@ -87,13 +118,32 @@ class Spotify {
                             'Authorization': `Bearer ${this.accessToken}`,
                         },
                     });
-                    let playlists: string[] = [];
+                    let playlists: any[] = [];
                     res_pl.data.tracks.items.map(async (d: any) => {
                         if (d.track?.name && d.track?.artists?.length)
-                            playlists.push(`${d.track.name} ${d.track?.artists.map((n: any) => n.name).join(" ")}`);
+                            playlists.push(this.buildTrack({
+                            title: `${d.track.name}`,
+                            author: `${d.track?.artists.map((n: any) => n.name).join(", ")}`,
+                            id: d.track.id,
+                            isrc: d.track.external_ids.isrc,
+                            duration: d.track.duration_ms,
+                            url: d.track.external_urls.spotify,
+                            type: "playlist_track"
+                        }));
                     });
                     return {
-                        playlist: playlists
+                        name: res_pl.data.name,
+                        type: "playlist",
+                        description: res_pl.data.description,
+                        url: res_pl.data.external_urls.spotify,
+                        owner: {
+                            name: res_pl.data.owner.display_name,
+                            id: res_pl.data.owner.id,
+                            url: res_pl.data.owner.external_urls.spotify
+                        },
+                        followers: res_pl.data.followers.total,
+                        length: playlists.length,
+                        items: playlists
                     };
                 
                 default:
@@ -104,6 +154,28 @@ class Spotify {
         }
     }
 
+    buildTrack(track: any): Track {
+        return {
+            trackToken: null,
+            info: {
+                identifier: track?.id || null,
+                author: track?.author || null,
+                length: track?.duration || null,
+                isStream: false,
+                title: track?.title || null,
+                uri: track?.url || null,
+                sourceName: "spotify",
+                position: 0,
+                artworkUrl: null,
+                isrc: track?.isrc || null,
+            },
+            pluginInfo: {
+                save_uri: null
+            },
+            type: track.type,
+            userData: {}
+        }
+    }
     
 }
 

@@ -2,6 +2,7 @@ import QueueManager from "./QueueManager";
 import Events from "../Utils/Events";
 import PlayerEvents from "./PlayerEventManager";
 import Filters from "./FilterManager";
+import Track from "../Structure/Track";
 
 interface PlayerOptions {
     guildId?: string | null;
@@ -100,8 +101,14 @@ class Player {
     }
 
     async play(options: any = {}) {
-        if (this.queue.size() < 1) return this;
+        if (this.queue.isEmpty()) return this;
+        
         this.queue.current = this.queue.shift();
+        const datas = this.queue.current;
+        
+        if(this.queue.current?.type === "playlist_track" || this.queue.current?.type === "album_track") 
+            this.queue.current = (await this.updateTrackInfo(datas)).tracks[0];
+        
         try {
             this.playing = true;
             this.position = 0;
@@ -138,7 +145,16 @@ class Player {
         this.blue.send({ op: 4, d: data });
     }
 
-    stop() {
+    async updateTrackInfo(datas: Track): Promise<any> {
+            let data = await this.blue.search({ query: `${this.queue.current.info.title} ${this.queue.current.info.author}`, source: "ytsearch" }).catch(() => null);
+            if(!data || !data.tracks?.length) return this.stop();
+            this.queue.current.info.sourceName = datas.info.sourceName;
+            this.queue.current.info.isrc = datas.info.isrc;
+            this.queue.current.info.uri = datas.info.uri;
+            return data;
+    }
+
+    stop(): this {
         this.position = 0;
         this.playing = false;
         this.blue.node.rest.updatePlayer({
@@ -172,7 +188,7 @@ class Player {
 
     pause(pause: boolean = true) {
         if (typeof pause !== "boolean")
-            throw new TypeError("blue.js :: Pause function must be passed a boolean value.");
+            throw new TypeError("blue.ts :: Pause function must be passed a boolean value.");
 
         this.blue.node.rest.updatePlayer({
             guildId: this.guildId,
@@ -215,10 +231,10 @@ class Player {
 
     setVolume(integer: number = this.volume) {
         if (Number.isNaN(integer))
-            throw new RangeError("blue.js :: Volume level must be a number.");
+            throw new RangeError("blue.ts :: Volume level must be a number.");
 
         if (integer < 0 || integer > 500)
-            throw new RangeError("blue.js :: Volume Number should be between 0 and 500");
+            throw new RangeError("blue.ts :: Volume Number should be between 0 and 500");
 
         this.blue.node.rest.updatePlayer({ guildId: this.guildId, data: { volume: integer } });
         this.volume = integer;
@@ -229,7 +245,7 @@ class Player {
         if(typeof position === "string") {
             position = parseInt(position);
             if(Number.isNaN(position)) 
-             throw new RangeError("blue.js :: Invalid position format");
+             throw new RangeError("blue.ts :: Invalid position format");
         }
         if(position < 0) position = 0;
         let ms = this.blue.util.durationInMs(position);
@@ -246,15 +262,12 @@ class Player {
 
     async autoplay() {
         try {
+            if(!["youtube", "youtube music", "spotify"].includes(this.blue.load.source)) return;
+            
             const data = `https://www.youtube.com/watch?v=${this.queue.previous?.info?.identifier || this.queue.current?.info?.identifier}&list=RD${this.queue.previous.info.identifier || this.queue.current.info.identifier}`;
 
-            const response = await this.blue.search({
-                query: data,
-                requester: this.queue.previous?.info?.requester ?? this.queue.current?.info?.requester,
-                source: "ytmsearch",
-            }).catch(() => false);
-
-            if (!response || !response.tracks || ["error", "empty"].includes(response.loadType))
+            const response = await this.blue.search({ query: data }).catch(() => false);
+            if (!response || !response.tracks?.length || ["error", "empty"].includes(response.loadType))
                 return (await this.stop());
 
             response.tracks.shift();

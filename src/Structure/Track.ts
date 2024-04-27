@@ -7,7 +7,7 @@ class Track {
         this.info.thumbnail = track.info.uri.includes("youtube")
             ? `https://img.youtube.com/vi/${track.info.identifier}/default.jpg`
             : null;
-        this.info.duration = track.info.length;
+        this.info.duration = track.info?.length;
         delete this.info.length;
     }
 }

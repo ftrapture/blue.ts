@@ -7,8 +7,9 @@ class SoundCloud {
         this.blue = blue;
     }
 
-    async search(query: string, type: string = "scsearch") {
+    async search(query: string) {
         try {
+            const type: string = "scsearch";
             const url = `http${this.blue.options.secure ? "s" : ""}://${this.blue.options.host}:${this.blue.options.port}/${this.blue.version}/loadtracks?identifier=${encodeURIComponent(`${type}:${query}`)}`;
 
             const response = await fetch(url, {

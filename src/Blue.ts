@@ -217,7 +217,7 @@ class Blue extends EventEmitter {
     data_copy.requester = requester;
     if (!this.nodes?.has(this.options.host)) throw new Error("No nodes are available.");
     let data = await this.load.fetch(param);
-    if (data.loadType === Types.LOAD_ERROR || data.loadType === Types.LOAD_EMPTY) {
+    if (!data || data?.loadType === Types.LOAD_ERROR || data?.loadType === Types.LOAD_EMPTY) {
       throw new Error("No tracks found.");
     } else if (data.loadType === Types.LOAD_SEARCH || data.loadType === Types.LOAD_PLAYLIST) {
       if (Array.isArray(data.data)) {
@@ -231,6 +231,7 @@ class Blue extends EventEmitter {
           data_copy.tracks[i] = track;
         }
       }
+      
     } else if (data.loadType === Types.LOAD_TRACK) {
       const track = new TrackManager(data.data);
       data_copy.tracks[0] = track;
