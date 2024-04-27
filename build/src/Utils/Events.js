@@ -22,3 +22,4 @@ var Events;
     Events["wsError"] = "error";
 })(Events || (Events = {}));
 exports.default = Events;
+//# sourceMappingURL=Events.js.map

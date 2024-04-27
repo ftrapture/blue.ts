@@ -9,3 +9,4 @@ var HttpMethods;
     HttpMethods["Put"] = "PUT";
 })(HttpMethods || (HttpMethods = {}));
 exports.default = HttpMethods;
+//# sourceMappingURL=Methods.js.map

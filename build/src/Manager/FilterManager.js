@@ -1,7 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var FilterManager = /** @class */ (function () {
-    function FilterManager(player, options) {
+class FilterManager {
+    player;
+    volume;
+    equalizer;
+    karaoke;
+    tremolo;
+    vibrato;
+    rotation;
+    distortion;
+    channelMix;
+    lowPass;
+    timeScaler;
+    vaporwave;
+    bassboost;
+    is8D;
+    nightcore;
+    constructor(player, options) {
         this.player = player;
         this.volume = 1.0;
         this.vaporwave = false;
@@ -9,39 +24,39 @@ var FilterManager = /** @class */ (function () {
         this.nightcore = false;
         this.is8D = false;
         this.bassboost = 0;
-        this.karaoke = (options === null || options === void 0 ? void 0 : options.karaoke) || null;
-        this.timeScaler = (options === null || options === void 0 ? void 0 : options.timeScaler) || null;
-        this.tremolo = (options === null || options === void 0 ? void 0 : options.tremolo) || null;
-        this.vibrato = (options === null || options === void 0 ? void 0 : options.vibrato) || null;
-        this.rotation = (options === null || options === void 0 ? void 0 : options.rotation) || null;
-        this.distortion = (options === null || options === void 0 ? void 0 : options.distortion) || null;
-        this.channelMix = (options === null || options === void 0 ? void 0 : options.channelMix) || null;
-        this.lowPass = (options === null || options === void 0 ? void 0 : options.lowPass) || null;
+        this.karaoke = options?.karaoke || null;
+        this.timeScaler = options?.timeScaler || null;
+        this.tremolo = options?.tremolo || null;
+        this.vibrato = options?.vibrato || null;
+        this.rotation = options?.rotation || null;
+        this.distortion = options?.distortion || null;
+        this.channelMix = options?.channelMix || null;
+        this.lowPass = options?.lowPass || null;
     }
-    FilterManager.prototype.setEqualizer = function (bands) {
+    setEqualizer(bands) {
         this.equalizer = bands;
         this.updateFilters();
         return this;
-    };
-    FilterManager.prototype.setKaraoke = function (settings) {
+    }
+    setKaraoke(settings) {
         this.karaoke = settings || null;
         this.updateFilters();
         return this;
-    };
-    FilterManager.prototype.setTimeScaler = function (scaler) {
+    }
+    setTimeScaler(scaler) {
         this.timeScaler = scaler || null;
         this.updateFilters();
         return this;
-    };
-    FilterManager.prototype.setTremolo = function (settings) {
+    }
+    setTremolo(settings) {
         this.tremolo = settings || null;
         this.updateFilters();
         return this;
-    };
-    FilterManager.prototype.setBassboost = function () {
+    }
+    setBassboost() {
         if (!this.player)
             return this;
-        var bands = [
+        const bands = [
             { band: 0, gain: 0.34 },
             { band: 1, gain: 0.34 },
             { band: 2, gain: 0.34 },
@@ -49,8 +64,8 @@ var FilterManager = /** @class */ (function () {
         ];
         this.setEqualizer(bands);
         return this;
-    };
-    FilterManager.prototype.setNightcore = function (val) {
+    }
+    setNightcore(val) {
         if (!this.player)
             return;
         this.nightcore = val;
@@ -59,45 +74,45 @@ var FilterManager = /** @class */ (function () {
             this.vaporwave = false;
         }
         return val;
-    };
-    FilterManager.prototype.setTimescale = function (timescale) {
+    }
+    setTimescale(timescale) {
         this.timeScaler = timescale || null;
         this.updateFilters();
         return this;
-    };
-    FilterManager.prototype.setVibrato = function (settings) {
+    }
+    setVibrato(settings) {
         this.vibrato = settings || null;
         this.updateFilters();
         return this;
-    };
-    FilterManager.prototype.setRotation = function (settings) {
+    }
+    setRotation(settings) {
         this.rotation = settings || null;
         this.updateFilters();
         return this;
-    };
-    FilterManager.prototype.setDistortion = function (settings) {
+    }
+    setDistortion(settings) {
         this.distortion = settings || null;
         this.updateFilters();
         return this;
-    };
-    FilterManager.prototype.setChannelMix = function (mixer) {
+    }
+    setChannelMix(mixer) {
         this.channelMix = mixer || null;
         this.updateFilters();
         return this;
-    };
-    FilterManager.prototype.setLowPass = function (filter) {
+    }
+    setLowPass(filter) {
         this.lowPass = filter || null;
         this.updateFilters();
         return this;
-    };
-    FilterManager.prototype.set8D = function (val) {
+    }
+    set8D(val) {
         if (!this.player)
             return;
         this.setRotation(val ? { rotationHz: 0.065 } : null);
         this.is8D = val;
         return this;
-    };
-    FilterManager.prototype.clearFilters = function () {
+    }
+    clearFilters() {
         this.vaporwave = false;
         this.equalizer = [];
         this.nightcore = false;
@@ -113,30 +128,21 @@ var FilterManager = /** @class */ (function () {
         this.lowPass = null;
         this.updateFilters();
         return this;
-    };
-    FilterManager.prototype.updateFilters = function () {
+    }
+    updateFilters() {
         if (!this.player || !this.player.blue || !this.player.blue.node || !this.player.blue.node.rest || !this.player.guildId) {
             throw new Error("Player or its properties are not properly initialized.");
         }
-        var _a = this, volume = _a.volume, equalizer = _a.equalizer, karaoke = _a.karaoke, timeScaler = _a.timeScaler, tremolo = _a.tremolo, vibrato = _a.vibrato, rotation = _a.rotation, distortion = _a.distortion, channelMix = _a.channelMix, lowPass = _a.lowPass;
+        const { volume, equalizer, karaoke, timeScaler, tremolo, vibrato, rotation, distortion, channelMix, lowPass } = this;
         this.player.blue.node.rest.updatePlayer({
             guildId: this.player.guildId,
             data: {
                 filters: {
-                    volume: volume,
-                    equalizer: equalizer,
-                    karaoke: karaoke,
-                    timeScaler: timeScaler,
-                    tremolo: tremolo,
-                    vibrato: vibrato,
-                    rotation: rotation,
-                    distortion: distortion,
-                    channelMix: channelMix,
-                    lowPass: lowPass,
+                    volume, equalizer, karaoke, timeScaler, tremolo, vibrato, rotation, distortion, channelMix, lowPass,
                 }
             }
         });
-    };
-    return FilterManager;
-}());
+    }
+}
 exports.default = FilterManager;
+//# sourceMappingURL=FilterManager.js.map

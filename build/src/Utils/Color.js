@@ -13,26 +13,27 @@ var TextColor;
     TextColor["White"] = "\u001B[37m";
 })(TextColor || (exports.TextColor = TextColor = {}));
 String.prototype.Black = function () {
-    return "".concat(TextColor.Black).concat(this, "\u001B[0m");
+    return `${TextColor.Black}${this}\x1b[0m`;
 };
 String.prototype.Red = function () {
-    return "".concat(TextColor.Red).concat(this, "\u001B[0m");
+    return `${TextColor.Red}${this}\x1b[0m`;
 };
 String.prototype.Green = function () {
-    return "".concat(TextColor.Green).concat(this, "\u001B[0m");
+    return `${TextColor.Green}${this}\x1b[0m`;
 };
 String.prototype.Yellow = function () {
-    return "".concat(TextColor.Yellow).concat(this, "\u001B[0m");
+    return `${TextColor.Yellow}${this}\x1b[0m`;
 };
 String.prototype.Blue = function () {
-    return "".concat(TextColor.Blue).concat(this, "\u001B[0m");
+    return `${TextColor.Blue}${this}\x1b[0m`;
 };
 String.prototype.Magenta = function () {
-    return "".concat(TextColor.Magenta).concat(this, "\u001B[0m");
+    return `${TextColor.Magenta}${this}\x1b[0m`;
 };
 String.prototype.Cyan = function () {
-    return "".concat(TextColor.Cyan).concat(this, "\u001B[0m");
+    return `${TextColor.Cyan}${this}\x1b[0m`;
 };
 String.prototype.White = function () {
-    return "".concat(TextColor.White).concat(this, "\u001B[0m");
+    return `${TextColor.White}${this}\x1b[0m`;
 };
+//# sourceMappingURL=Color.js.map

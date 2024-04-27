@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var PluginsLoader = /** @class */ (function () {
-    function PluginsLoader(name) {
+class PluginsLoader {
+    name;
+    constructor(name) {
         this.name = name;
     }
-    PluginsLoader.prototype.main = function () { };
-    return PluginsLoader;
-}());
+    main() { }
+}
 exports.default = PluginsLoader;
+//# sourceMappingURL=Loaders.js.map
