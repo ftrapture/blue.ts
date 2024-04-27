@@ -34,7 +34,7 @@ const client = new Client({
   presence: {
     activities: [
       {
-        name: 'Blue.js',
+        name: 'Blue.ts',
         type: "LISTENING",
       },
     ],
@@ -45,7 +45,7 @@ const client = new Client({
 const nodes = [
   {
     host: "localhost",
-    port: 2333,
+    port: 2333
     password: "youshallnotpass",
     secure: false
   }
@@ -53,8 +53,8 @@ const nodes = [
 
 const options = {
   spotify: {
-    client_id: "CLIENT_ID",  //spotify client ID
-    client_secret: "CLIENT_SECRET" //spotify client Secret
+    client_id: "CLIENT_ID",
+    client_secret: "CLIENT_SECRET"
   },
   autoplay: true,
   version: "v4",
@@ -116,10 +116,10 @@ client.on("messageCreate", async (message) => {
         selfMute: false
       });
 
-    const res = await client.manager.search({ query: query }, message.author).catch(() => null);
+    const res = await client.manager.search({ query: query, source: "youtube" }, message.author).catch(() => null);
     if (!res) return message.reply("song not found");
     if (res.loadType == Types.LOAD_SP_ALBUMS || res.loadType == Types.LOAD_SP_PLAYLISTS) {
-      player.queue.add(...res.tracks);
+      player.queue.add(...res.items);
     } else {
       player.queue.add(res.tracks[0]);
     }
@@ -173,4 +173,4 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-client.login("BOT_TOKEN"); //Discord Bot Token
+client.login("CLIENT_TOKEN"); //Discord Bot Token
