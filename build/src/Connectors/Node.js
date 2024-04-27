@@ -55,7 +55,7 @@ var config_json_1 = require("../config.json");
 var Events_1 = __importDefault(require("../Utils/Events"));
 var RestManager_1 = __importDefault(require("../Manager/RestManager"));
 require("../Utils/Color");
-var package_json_1 = __importDefault(require("../../package.json"));
+var package_json_1 = __importDefault(require("../config.json"));
 var Node = /** @class */ (function () {
     function Node(blue, node, options) {
         var _a, _b;

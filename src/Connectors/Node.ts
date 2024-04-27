@@ -3,7 +3,7 @@ import { client_name } from "../config.json";
 import Events from "../Utils/Events";
 import RestManager from "../Manager/RestManager";
 import '../Utils/Color';
-import Config from "../../package.json";
+import Config from "../config.json";
 class Node {
   public readonly blue: any;
   public node: any;
