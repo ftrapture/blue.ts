@@ -24,6 +24,9 @@ declare class Util {
     constructor(blue: any);
     checkParamsValidity<T extends DefaultPacket>(nodePackets: NodePacket[], defaultPackets: T): Promise<any>;
     checkObjectValidity<T extends Options>(options: T): boolean;
+    base64encode(input: string): string;
+    base64decode(input: string): string | boolean;
+    isBase64(input: string): boolean;
     durationInMs(time: string | number): number;
 }
 export default Util;

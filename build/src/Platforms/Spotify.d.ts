@@ -1,6 +1,6 @@
 import Queue from "../Manager/QueueManager";
-interface Track {
-    trackToken: string | null;
+export interface Track {
+    encoded: string | null;
     info: {
         identifier: string | null | undefined;
         author: string | null | undefined;
@@ -13,9 +13,7 @@ interface Track {
         artworkUrl: string | null | undefined;
         isrc: string | number | null | undefined;
     };
-    pluginInfo: any;
     type: string;
-    userData: any;
 }
 declare class Spotify {
     readonly blue: any;
@@ -26,25 +24,14 @@ declare class Spotify {
     accessToken: string;
     readonly queue: Queue;
     constructor(blue: any);
-    search(query: string, type?: string): Promise<string>;
+    search(query: string, type?: string): Promise<Track>;
     initialize(): Promise<void>;
-    getSpotifyEntityInfo(url: string): Promise<{
+    getSpotifyEntityInfo(url: string): Promise<Track | {
         name: any;
         type: string;
         url: any;
         length: number;
-        items: any[];
-        track?: undefined;
-        description?: undefined;
-        owner?: undefined;
-        followers?: undefined;
-    } | {
-        track: string;
-        name?: undefined;
-        type?: undefined;
-        url?: undefined;
-        length?: undefined;
-        items?: undefined;
+        tracks: any[];
         description?: undefined;
         owner?: undefined;
         followers?: undefined;
@@ -60,8 +47,7 @@ declare class Spotify {
         };
         followers: any;
         length: number;
-        items: any[];
-        track?: undefined;
+        tracks: any[];
     }>;
     buildTrack(track: any): Track;
 }

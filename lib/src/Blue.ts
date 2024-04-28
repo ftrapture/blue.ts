@@ -25,16 +25,6 @@ interface VoiceUpdatePayloads extends VoiceUpdate {
   region: any;
 }
 
-interface SearchStruct {
-  tracks: any[],
-  loadType: string
-}
-
-export interface Track extends TrackManager {
-  trackToken: any;
-  info: any;
-}
-
 interface SearchManager extends Search {
     blue: any;
     youtube: any;
@@ -210,7 +200,7 @@ class Blue extends EventEmitter {
     }
   }
 
-  async search(param: any, requester: any = this.client.user): Promise<SearchStruct | any> {
+  async search(param: any, requester: any = this.client.user): Promise<any> {
     if(!this.isInitiated) throw new Error("Blue has not been initiated yet.");
     let data_copy: any = {};
     data_copy.tracks = [];
@@ -235,6 +225,12 @@ class Blue extends EventEmitter {
     } else if (data.loadType === Types.LOAD_TRACK) {
       const track = new TrackManager(data.data);
       data_copy.tracks[0] = track;
+    } else if(data.loadType === Types.LOAD_SP_TRACK) {
+      if(data.tracks.length === 1) {
+        data_copy.tracks[0] = new TrackManager(data.tracks[0]);
+      } else {
+        data_copy.tracks = [...data.tracks]
+      }
     } else {
       data_copy = { ...data, requester: requester };
     }

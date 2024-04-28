@@ -178,6 +178,14 @@ class Blue extends node_events_1.EventEmitter {
             const track = new Track_1.default(data.data);
             data_copy.tracks[0] = track;
         }
+        else if (data.loadType === Types_1.default.LOAD_SP_TRACK) {
+            if (data.tracks.length === 1) {
+                data_copy.tracks[0] = new Track_1.default(data.tracks[0]);
+            }
+            else {
+                data_copy.tracks = [...data.tracks];
+            }
+        }
         else {
             data_copy = { ...data, requester: requester };
         }

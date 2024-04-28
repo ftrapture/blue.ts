@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
 const QueueManager_1 = __importDefault(require("../Manager/QueueManager"));
+const Track_1 = __importDefault(require("../Structure/Track"));
 class Spotify {
     blue;
     client_id;
@@ -29,7 +30,15 @@ class Spotify {
                 'Authorization': `Bearer ${this.accessToken}`,
             },
         });
-        return `${response.data.tracks.items[0].name} ${response.data?.tracks?.items[0]?.artists.map((n) => n.name).join(" ")}`;
+        return this.buildTrack({
+            title: `${response.data.tracks.items[0].name}`,
+            author: `${response.data?.tracks.items[0].artists.map((n) => n.name).join(" ")}`,
+            id: response.data.tracks.items[0].id,
+            url: response.data.tracks.items[0].external_urls.spotify,
+            isrc: response.data.tracks.items[0].external_ids.isrc,
+            duration: response.data.tracks.items[0].duration_ms,
+            type: "track"
+        });
     }
     async initialize() {
         const response = await axios_1.default.post('https://accounts.spotify.com/api/token', 'grant_type=client_credentials', {
@@ -56,22 +65,22 @@ class Spotify {
                     let albums = [];
                     res.data.tracks.items.map(async (d) => {
                         if (d.name && d.artists?.length)
-                            albums.push(this.buildTrack({
+                            albums.push(new Track_1.default(this.buildTrack({
                                 title: `${d.name}`,
                                 author: `${d.artists.map((n) => n.name).join(" ")}`,
                                 id: d.id,
                                 isrc: null,
                                 duration: d.duration_ms,
                                 url: d.external_urls.spotify,
-                                type: "album"
-                            }));
+                                type: "album_track"
+                            })));
                     });
                     return {
                         name: res.data.name,
-                        type: "album_track",
+                        type: "album",
                         url: res.data.external_urls.spotify,
                         length: albums.length,
-                        items: albums
+                        tracks: albums
                     };
                 case 'track':
                     const response = await axios_1.default.get(`${this.baseUrl}${entityType}s/${entityId}`, {
@@ -79,9 +88,15 @@ class Spotify {
                             'Authorization': `Bearer ${this.accessToken}`,
                         },
                     });
-                    return {
-                        track: `${response.data.name} ${response.data?.artists.map((n) => n.name).join(" ")}`
-                    };
+                    return this.buildTrack({
+                        title: `${response.data.name}`,
+                        author: `${response.data?.artists.map((n) => n.name).join(" ")}`,
+                        id: response.data.id,
+                        url: response.data.external_urls.spotify,
+                        isrc: response.data.external_ids.isrc,
+                        duration: response.data.duration_ms,
+                        type: "track"
+                    });
                 case 'playlist':
                     const res_pl = await axios_1.default.get(`${this.baseUrl}${entityType}s/${entityId}`, {
                         headers: {
@@ -91,7 +106,7 @@ class Spotify {
                     let playlists = [];
                     res_pl.data.tracks.items.map(async (d) => {
                         if (d.track?.name && d.track?.artists?.length)
-                            playlists.push(this.buildTrack({
+                            playlists.push(new Track_1.default(this.buildTrack({
                                 title: `${d.track.name}`,
                                 author: `${d.track?.artists.map((n) => n.name).join(", ")}`,
                                 id: d.track.id,
@@ -99,7 +114,7 @@ class Spotify {
                                 duration: d.track.duration_ms,
                                 url: d.track.external_urls.spotify,
                                 type: "playlist_track"
-                            }));
+                            })));
                     });
                     return {
                         name: res_pl.data.name,
@@ -113,7 +128,7 @@ class Spotify {
                         },
                         followers: res_pl.data.followers.total,
                         length: playlists.length,
-                        items: playlists
+                        tracks: playlists
                     };
                 default:
                     return null;
@@ -125,7 +140,7 @@ class Spotify {
     }
     buildTrack(track) {
         return {
-            trackToken: null,
+            encoded: null,
             info: {
                 identifier: track?.id || null,
                 author: track?.author || null,
@@ -138,11 +153,7 @@ class Spotify {
                 artworkUrl: null,
                 isrc: track?.isrc || null,
             },
-            pluginInfo: {
-                save_uri: null
-            },
-            type: track.type,
-            userData: {}
+            type: track.type
         };
     }
 }

@@ -69,6 +69,31 @@ class Util {
         }
         return true;
     }
+    base64encode(input) {
+        return Buffer.from(input).toString('base64');
+    }
+    base64decode(input) {
+        if (!this.isBase64(input))
+            return false;
+        return Buffer.from(input, 'base64').toString('utf-8');
+    }
+    isBase64(input) {
+        const validBase64Chars = /^[A-Za-z0-9+/]*=?=?$/;
+        if (!validBase64Chars.test(input)) {
+            return false;
+        }
+        const lengthWithoutPadding = input.replace(/=/g, '').length;
+        if (lengthWithoutPadding % 4 !== 0) {
+            return false;
+        }
+        try {
+            const decoded = Buffer.from(input, 'base64').toString('utf-8');
+            return decoded !== input;
+        }
+        catch (error) {
+            return false;
+        }
+    }
     durationInMs(time) {
         if (!time && time !== 0) {
             throw new RangeError("'time' parameter must be present and of string type with a value greater than 0.");

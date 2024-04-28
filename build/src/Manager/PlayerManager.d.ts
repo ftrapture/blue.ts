@@ -60,6 +60,7 @@ declare class Player {
     isPaused(): boolean;
     isConnected(): boolean;
     play(options?: any): Promise<this>;
+    search(): Promise<Track | null | undefined>;
     connect(): void;
     send(data: any): void;
     updateTrackInfo(datas: Track): void;

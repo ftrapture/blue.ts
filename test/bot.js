@@ -118,17 +118,18 @@ client.on("messageCreate", async (message) => {
         selfMute: false
       });
 
-    const res = await client.manager.search({ query: query, source: "youtube" }, message.author).catch(() => null);
+    const res = await client.manager.search({ query: query, source: "spotify" }, message.author)
     if (!res) return message.reply("song not found");
     if (res.loadType == Types.LOAD_SP_ALBUMS || res.loadType == Types.LOAD_SP_PLAYLISTS) {
-      player.queue.add(...res.items);
+      player.queue.add(...res.tracks);
+      message.reply(`Loaded **${res.length}** tracks from \`${res.name}\``);
     } else {
       player.queue.add(res.tracks[0]);
+      message.reply(`Track: **${res.tracks[0].info.title}** added to queue.`);
     }
     if (!player.queue?.current)
       player.play();
-    return message.reply("queued song");
-  }
+      }
 
   if (cmd == "skip") {
     if (!player || !player.isConnected) return message.reply("player not initialized yet.");

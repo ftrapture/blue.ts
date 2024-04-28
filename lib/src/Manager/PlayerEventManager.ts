@@ -44,14 +44,12 @@ class PlayerEvent {
     }
 
     TrackStuckEvent(player: any, track: any, payload: any) {
-        console.log("stuck");
         this.player.playing = false;
         if (!player) return;
         this.player.blue.emit(Events.trackError, player, track, payload);
     }
 
     TrackExceptionEvent(player: any, track: any, payload: any) {
-        console.log("exception");
         this.player.playing = false;
         if (!player) return;
         this.player.blue.emit(Events.trackError, player, track, payload);

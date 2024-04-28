@@ -3,6 +3,7 @@ import Events from "../Utils/Events";
 import PlayerEvents from "./PlayerEventManager";
 import Filters from "./FilterManager";
 import Track from "../Structure/Track";
+import Types from "../Utils/Types";
 
 interface PlayerOptions {
     guildId?: string | null;
@@ -106,13 +107,10 @@ class Player {
         this.queue.current = this.queue.shift();
         const datas = this.queue.current;
         
-        if(this.queue.current?.type === "playlist_track" || this.queue.current?.type === "album_track") {
-            let data = await this.blue.search({ query: `${this.queue.current.info.title} ${this.queue.current.info.author}`, source: "ytsearch" }).catch(() => null);
-            if(!data || !data.tracks?.length) return this.stop();
-            this.queue.current = data.tracks[0];
-            this.updateTrackInfo(datas);
+        if(this.queue.current?.type === "playlist_track" || this.queue.current?.type === "album_track"){
+            this.queue.current = await this.search();
+            await this.updateTrackInfo(datas);
         }
-        
         try {
             this.playing = true;
             this.position = 0;
@@ -124,7 +122,7 @@ class Player {
                 guildId: this.guildId,
                 noReplace: options?.noReplace || false,
                 data: {
-                    track: { encoded: this.queue.current?.trackToken },
+                    track: { encoded: this.queue.current?.trackToken || null },
                     volume: adjustedVolume
                 },
             });
@@ -133,6 +131,12 @@ class Player {
             this.playing = false;
             this.blue.emit(Events.trackError, this, this.queue.current, null);
         }
+    }
+
+    async search(): Promise<Track | null | undefined> {
+        let data = await this.blue.search({ query: `${this.queue.current.info.title} ${this.queue.current.info.author}`, source: "youtube music" }).catch(() => null);
+        if(!data || !data.tracks?.length || [Types.LOAD_ERROR, Types.LOAD_EMPTY].includes(data.loadType)) return null;
+        return data.tracks[0];
     }
 
     connect() {
@@ -152,6 +156,7 @@ class Player {
     updateTrackInfo(datas: Track): void {
             this.queue.current.info.sourceName = datas.info.sourceName;
             this.queue.current.info.isrc = datas.info.isrc;
+            this.queue.current.type = datas.type;
             this.queue.current.info.uri = datas.info.uri;
     }
 
@@ -263,16 +268,16 @@ class Player {
 
     async autoplay() {
         try {
-            if(!["youtube", "youtube music", "spotify"].includes(this.blue.load.source)) return;
+            if(!["ytsearch", "ytmsearch", "youtube", "youtube music", "spotify"].includes(this.blue.load.source)) return;
             
             const data = `https://www.youtube.com/watch?v=${this.queue.previous?.info?.identifier || this.queue.current?.info?.identifier}&list=RD${this.queue.previous.info.identifier || this.queue.current.info.identifier}`;
 
-            const response = await this.blue.search({ query: data }).catch(() => false);
-            if (!response || !response.tracks?.length || ["error", "empty"].includes(response.loadType))
+            const response = await this.blue.search({ query: data }).catch(() => null);
+            if (!response || !response.tracks?.length || [Types.LOAD_ERROR, Types.LOAD_EMPTY].includes(response.loadType))
                 return (await this.stop());
 
             response.tracks.shift();
-
+            
             const track = response.tracks[
                 Math.floor(Math.random() * Math.floor(response.tracks.length))
             ];

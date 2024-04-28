@@ -37,6 +37,9 @@ declare class Search {
     source: string;
     constructor(blue: any);
     fetch(param: any): Promise<any>;
+    private isValidUrl;
+    private handleUrlQuery;
+    private handleNonUrlQuery;
     fetchRawData(endpoint: string, identifier: string): Promise<unknown>;
 }
 export default Search;

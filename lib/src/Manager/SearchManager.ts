@@ -3,6 +3,7 @@ import YoutubeEngine from "../Platforms/Youtube";
 import SoundcloudEngine from "../Platforms/SoundCloud";
 import SpotifyEngine from "../Platforms/Spotify";
 import Types from "../Utils/Types";
+import TrackStructure from "../Structure/Track";
 
 interface Blue {
   nodes: any;
@@ -51,59 +52,104 @@ class Search {
     }
 
     async fetch(param: any) {
-        let query = typeof param === "string" ? param : param?.query ? param?.query : null;
-        if(param?.source) this.source = param?.source;
+        const query = typeof param === "string" ? param : param?.query || null;
         if (!query) return null;
-
-        const urlRegex = /(?:https?|ftp):\/\/[\n\S]+/gi;
-        let result: any;
-
-        if (urlRegex.test(query)) {
-            const get_sp_link = await this.spotify.getSpotifyEntityInfo(query).catch(() => null);
-            if (get_sp_link?.type === "album") {
-                return {
-                    loadType: Types.LOAD_SP_ALBUMS,
-                    ...get_sp_link
-                };
-            } else if (get_sp_link?.type === "playlist") {
-                return {
-                    loadType: Types.LOAD_SP_PLAYLISTS,
-                    ...get_sp_link
-                };
-            } else if (get_sp_link?.track) {
-                if(this.source.startsWith("youtube"))
-                    result = await this.youtube.search(get_sp_link?.track, "ytsearch").catch(() => null);
-                  else 
-                    result = await this.soundcloud.search(get_sp_link?.track).catch(() => null);
-            } else {
-                result = await this.fetchRawData(`${this.blue.version}/loadtracks`, `identifier=${encodeURIComponent(query)}`);
-            }
-        } else {
-            let data: any;
-            if (this.source === "youtube" || this.source === "youtube music" || this.source === "soundcloud") {
-                switch (this.source) {
-                    case "youtube":
-                        data = await this.youtube.search(query, "ytsearch").catch(() => null);
-                        break;
-                    case "youtube music":
-                        data = await this.youtube.search(query, "ytmsearch").catch(() => null);
-                        break;
-                    case "soundcloud":
-                        data = await this.soundcloud.search(query).catch(() => null);
-                        break;
-                }
-                if (!data) return null;
-                return data;
-             } else if (this.source === "spotify") {
-                data = await this.spotify.search(query).catch(() => null);
-                result = await this.youtube.search(data, "ytsearch").catch(() => null);
-             } else {
-                result = await this.youtube.search(query, "ytsearch").catch(() => null);
-            }
+      
+        if (param?.source) this.source = param.source;
+      
+        const isUrl = this.isValidUrl(query);
+      
+        if (isUrl) {
+          return this.handleUrlQuery(query);
         }
+      
+        return this.handleNonUrlQuery(query);
+      }
+      
+      private isValidUrl(query: string): boolean {
+        const urlRegex = /(?:https?|ftp):\/\/[\n\S]+/gi;
+        return urlRegex.test(query);
+      }
+      
+      private async handleUrlQuery(query: string) {
+        const spotifyEntityInfo = await this.spotify.getSpotifyEntityInfo(query).catch(() => null);
+      
+        if (spotifyEntityInfo?.type === "album") {
+          return {
+            loadType: Types.LOAD_SP_ALBUMS,
+            ...spotifyEntityInfo
+          };
+        }
+      
+        if (spotifyEntityInfo?.type === "playlist") {
+          return {
+            loadType: Types.LOAD_SP_PLAYLISTS,
+            ...spotifyEntityInfo
+          };
+        }
+      
+        if (spotifyEntityInfo?.type === "track") {
+          let tracks;
+          if (this.source.startsWith("youtube")) {
+              tracks = await this.youtube.search(`${spotifyEntityInfo.info.title} ${spotifyEntityInfo.info.author}`, "ytmsearch").catch(() => null);
+          } else {
+              tracks = await this.soundcloud.search(`${spotifyEntityInfo.info.title} ${spotifyEntityInfo.info.author}`).catch(() => null);
+          }
 
-        return result;
-    }
+          const track = tracks.data[0];
+          
+          track.info.sourceName = spotifyEntityInfo.info.sourceName;
+          track.info.isrc = spotifyEntityInfo.info.isrc;
+          track.type = spotifyEntityInfo.type;
+          track.info.uri = spotifyEntityInfo.info.uri;
+          return {
+            loadType: Types.LOAD_SP_TRACK,
+            tracks: [track]
+          }
+        }
+      
+        return (await this.fetchRawData(`${this.blue.version}/loadtracks`, `identifier=${encodeURIComponent(query)}`));
+      }
+      
+      private async handleNonUrlQuery(query: string) {
+        let data: any;
+        switch (this.source) {
+          case "youtube":
+            data = await this.youtube.search(query, "ytsearch").catch(() => null);
+            break;
+          case "youtube music":
+            data = await this.youtube.search(query, "ytmsearch").catch(() => null);
+            break;
+          case "soundcloud":
+            data = await this.soundcloud.search(query).catch(() => null);
+            break;
+          case "spotify":
+            data = await this.spotify.search(query).catch(() => null);
+            if (data) {
+              const tracks: any = await this.youtube.search(`${data.info.title} ${data.info.author}`, "ytmsearch").catch(() => null);
+              if(!tracks) return null;
+              let builtTracks: any[] = [];
+             for(let i: number = 0; i < tracks.data.length; i++) {
+                tracks.data[i].info.sourceName = data.info.sourceName;
+                tracks.data[i].info.isrc = data.info.isrc;
+                tracks.data[i].type = data.type;
+                tracks.data[i].info.uri = data.info.uri;
+                builtTracks.push(new TrackStructure(tracks.data[i]));
+             }
+             
+              return {
+                loadType: Types.LOAD_SP_TRACK,
+                tracks: builtTracks
+              }
+            }
+            break;
+          default:
+            data = await this.youtube.search(query, "ytsearch").catch(() => null);
+        }
+      
+        return data;
+      }
+      
 
     async fetchRawData(endpoint: string, identifier: string) {
         try {

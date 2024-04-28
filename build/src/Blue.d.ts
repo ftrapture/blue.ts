@@ -4,7 +4,6 @@ import VoiceUpdate from "./Connectors/voiceStateUpdate";
 import Util from "./Utils/Util";
 import Nodes from "./Connectors/Node";
 import Search from "./Manager/SearchManager";
-import TrackManager from "./Structure/Track";
 import RestManager from "./Manager/RestManager";
 import { Loader } from "./Plugins/index";
 interface VoiceUpdatePayloads extends VoiceUpdate {
@@ -19,14 +18,6 @@ interface VoiceUpdatePayloads extends VoiceUpdate {
     muted: boolean | null;
     defeaned: boolean | null;
     region: any;
-}
-interface SearchStruct {
-    tracks: any[];
-    loadType: string;
-}
-export interface Track extends TrackManager {
-    trackToken: any;
-    info: any;
 }
 interface SearchManager extends Search {
     blue: any;
@@ -97,6 +88,6 @@ declare class Blue extends EventEmitter {
     removeNode(node: any): any;
     updateNode(node?: any): any;
     handleEvents(payload: any): void;
-    search(param: any, requester?: any): Promise<SearchStruct | any>;
+    search(param: any, requester?: any): Promise<any>;
 }
 export default Blue;
