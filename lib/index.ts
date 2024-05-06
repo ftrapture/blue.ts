@@ -2,7 +2,7 @@
 =======================================================================================================
 This file is part of Rapture, a comprehensive music bot framework.
 
-Rapture is an open-source project licensed under the ISC License.
+Rapture is an open-source project licensed under the MIT License.
 - GitHub Repository: https://github.com/ftrapture/blue.ts
 
 Description:
