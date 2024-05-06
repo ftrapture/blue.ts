@@ -141,7 +141,7 @@ client.login("TOKEN");
 <br>
 <div>
  <h2 id="license">📜 License</h2>
- <p>This project is licensed under the <a href="https://github.com/ftrapture/blue.ts/blob/main/LICENSE">ISC License</a>.</p>
+ <p>This project is licensed under the <a href="https://github.com/ftrapture/blue.ts/tree/1.3?tab=MIT-1-ov-file">MIT License</a>.</p>
 </div>
 <br>
 <br>
