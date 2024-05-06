@@ -1,9 +1,25 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * TrackStructure class for structuring track information.
+ */
 class TrackStructure {
+    /**
+     * The token representing the track.
+     */
     trackToken;
+    /**
+     * Information about the track.
+     */
     info;
+    /**
+     * The type of the track.
+     */
     type;
+    /**
+     * Constructs a new TrackStructure instance.
+     * @param track - The track object.
+     */
     constructor(track) {
         this.trackToken = track.encoded;
         this.info = {

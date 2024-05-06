@@ -4,10 +4,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const Events_1 = __importDefault(require("../Utils/Events"));
+/**
+ * DiscordJs class
+ */
 class DiscordJs {
+    /**
+     * Instance of the blue client
+     */
     blue;
     constructor(blue) {
         this.blue = blue;
+        /**
+         * Listen for voice state updates
+         */
         this.blue.client.on(Events_1.default.voiceStateUpdate, async (oS, nS) => {
             const player = this.blue.players.get(oS.guild.id);
             if (nS.id === this.blue.client.user.id && nS.id === oS.id && oS?.channelId && nS?.channelId && oS?.channelId !== nS?.channelId) {
@@ -20,10 +29,18 @@ class DiscordJs {
                 }
             }
         });
+        /**
+         * Listen for API events
+         */
         this.blue.client.on(Events_1.default.api, async (packet) => {
             await this.blue.voiceState.updateVoice(packet);
         });
     }
+    /**
+     * Send data to the guild
+     * @param data - Data to be sent
+     * @returns Returns a promise with the sent data
+     */
     send(data) {
         try {
             if (!data)

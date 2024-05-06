@@ -4,8 +4,13 @@ import PlayerEvents from "./PlayerEventManager";
 import Filters from "./FilterManager";
 import Track from "../Structure/Track";
 import Types from "../Utils/Types";
+import { Blue } from "../Connectors/Node";
+import { Player as PlayerOption, VoiceConnection } from "../Blue";
 
-interface PlayerOptions {
+/**
+ * Player Options interface
+ */
+export interface PlayerOptions {
     guildId?: string | null;
     textChannel?: string | null;
     voiceChannel?: string | null;
@@ -13,8 +18,18 @@ interface PlayerOptions {
     selfDeaf?: boolean;
 }
 
-interface Filter extends Filters {
-     player: any;
+/**
+ * Interface for Blue structure
+ */
+interface BlueStruct extends Blue {
+    search: (...args: any) => Promise<any>
+}
+
+/**
+ * Interface for Filter
+ */
+export interface Filter extends Filters {
+     player: PlayerOption;
      volume: number;
      equalizer: any[];
      karaoke: any;
@@ -27,17 +42,26 @@ interface Filter extends Filters {
      timeScaler: any;
 }
 
-type Loop = "none" | "queue" | "track";
+/**
+ * Loop type
+ */
+export type Loop = "none" | "queue" | "track";
 
-interface PlayerEvent extends PlayerEvents {
+/**
+ * Interface for PlayerEvent
+ */
+export interface PlayerEvent extends PlayerEvents {
     TrackStartEvent: (...args: any) => void;
     TrackEndEvent: (...args: any) => void;
     TrackStuckEvent: (...args: any) => void;
     TrackExceptionEvent: (...args: any) => void;
     WebSocketClosedEvent: (...args: any) => void;
-  }
+}
 
-interface Queue extends QueueManager {
+/**
+ * Interface for Queue
+ */
+export interface Queue extends QueueManager {
      buffer: any[];
      head: number;
      tail: number;
@@ -45,8 +69,11 @@ interface Queue extends QueueManager {
      current: any | null;
 }
 
+/**
+ * Player class
+ */
 class Player {
-    public blue: any;
+    public blue: BlueStruct;
     public volume: number;
     public playing: boolean;
     public queue: Queue;
@@ -65,7 +92,10 @@ class Player {
     public loop: Loop;
     public event: PlayerEvent;
 
-    constructor(blue: any, options: PlayerOptions) {
+    /**
+     * Constructor
+     */
+    constructor(blue: BlueStruct, options: PlayerOptions) {
         this.blue = blue;
         this.volume = 100;
         this.filter = new Filters(this);
@@ -93,21 +123,34 @@ class Player {
         this.event = new PlayerEvents(this);
     }
 
-    isPaused() {
+    /**
+     * Check if player is paused
+     */
+    public isPaused(): boolean {
         return this.paused;
     }
 
-    isConnected() {
+    /**
+     * Check if player is connected
+     */
+    public isConnected(): boolean {
         return this.connected;
     }
 
-    async play(options: any = {}) {
-        if (this.queue.isEmpty()) return this;
+    /**
+     * Play function
+     */
+    public async play(options: any = {}): Promise<this | void> {
+        
+        if(this.queue.isEmpty()) return this;
         
         this.queue.current = this.queue.shift();
+
+        if(!this.queue.current?.info?.identifier) return this;
+
         const datas = this.queue.current;
         
-        if(this.queue.current?.type === "playlist_track" || this.queue.current?.type === "album_track"){
+        if(["album_track", "recommend_track", "playlist_track"].includes(this.queue.current?.type)){
             this.queue.current = await this.search();
             await this.updateTrackInfo(datas);
         }
@@ -133,13 +176,19 @@ class Player {
         }
     }
 
-    async search(): Promise<Track | null | undefined> {
+    /**
+     * Search function
+     */
+    private async search(): Promise<Track | null | undefined> {
         let data = await this.blue.search({ query: `${this.queue.current.info.title} ${this.queue.current.info.author}`, source: "youtube music" }).catch(() => null);
         if(!data || !data.tracks?.length || [Types.LOAD_ERROR, Types.LOAD_EMPTY].includes(data.loadType)) return null;
         return data.tracks[0];
     }
 
-    connect() {
+    /**
+     * Connect function
+     */
+    public connect(): void {
         this.send({
             guild_id: this.guildId,
             channel_id: this.voiceChannel,
@@ -149,18 +198,27 @@ class Player {
         this.connected = true;
     }
 
-    send(data: any) {
+    /**
+     * Send function
+     */
+    public send(data: any): void {
         this.blue.send({ op: 4, d: data });
     }
 
-    updateTrackInfo(datas: Track): void {
+    /**
+     * Update track info function
+     */
+    public updateTrackInfo(datas: Track): void {
             this.queue.current.info.sourceName = datas.info.sourceName;
             this.queue.current.info.isrc = datas.info.isrc;
             this.queue.current.type = datas.type;
             this.queue.current.info.uri = datas.info.uri;
     }
 
-    stop(): this {
+    /**
+     * Stop function
+     */
+    public stop(): this {
         this.position = 0;
         this.playing = false;
         this.blue.node.rest.updatePlayer({
@@ -170,7 +228,10 @@ class Player {
         return this;
     }
 
-    disconnect() {
+    /**
+     * Disconnect function
+     */
+    public disconnect(): this {
         if (this.voiceChannel === null) return null;
         this.connected = false;
         this.playing = false;
@@ -188,11 +249,17 @@ class Player {
         return this;
     }
 
-    destroy() {
+    /**
+     * Destroy function
+     */
+    public destroy(): this {
         return this.disconnect();
     }
 
-    pause(pause: boolean = true) {
+    /**
+     * Pause function
+     */
+    public pause(pause: boolean = true): this {
         if (typeof pause !== "boolean")
             throw new TypeError("blue.ts :: Pause function must be passed a boolean value.");
 
@@ -206,7 +273,10 @@ class Player {
         return this;
     }
 
-    setLoop(query: Loop) {
+    /**
+     * Set loop function
+     */
+    public setLoop(query: Loop): this {
         if(!query || !["queue", "track", "none"].includes(query.toLowerCase())) 
             this.loop = "none";
         else
@@ -214,7 +284,10 @@ class Player {
         return this;
     }
 
-    setVoiceChannel(channel: string, options: any = {}) {
+    /**
+     * Set voice channel function
+     */
+    public setVoiceChannel(channel: string, options: VoiceConnection): this {
         if(typeof channel !== "string") throw new TypeError(`'channel' must be contain only channel id.`);
         if (this.isConnected() && channel == this.voiceChannel)
             throw new ReferenceError(`Player is already created and connected to ${channel}`);
@@ -229,13 +302,19 @@ class Player {
         return this;
     }
 
-    setTextChannel(channel: string) {
+    /**
+     * Set text channel function
+     */
+    public setTextChannel(channel: string): this {
         if(typeof channel !== "string") throw new TypeError(`'channel' must be contain only channel id.`);
         this.textChannel = channel;
         return this;
     }
 
-    setVolume(integer: number = this.volume) {
+    /**
+     * Set volume function
+     */
+    public setVolume(integer: number = this.volume): this {
         if (Number.isNaN(integer))
             throw new RangeError("blue.ts :: Volume level must be a number.");
 
@@ -247,7 +326,10 @@ class Player {
         return this;
     }
 
-    seek(position: string | number) {
+    /**
+     * Seek function
+     */
+    public seek(position: string | number): this {
         if(typeof position === "string") {
             position = parseInt(position);
             if(Number.isNaN(position)) 
@@ -266,15 +348,18 @@ class Player {
         return this;
     }
 
-    async autoplay() {
+    /**
+     * Autoplay function
+     */
+    public async autoplay(): Promise<this | Error> {
         try {
-            if(!["ytsearch", "ytmsearch", "youtube", "youtube music", "spotify"].includes(this.blue.load.source)) return;
+            if(!this.queue.previous?.info?.identifier && !this.queue.current?.info?.identifier) throw new Error("Could not search for autoplay tracks.")
+            if(!["ytsearch", "ytmsearch", "youtube", "youtube music"].includes(this.blue.load.source)) return this.rawAutoplay();
             
             const data = `https://www.youtube.com/watch?v=${this.queue.previous?.info?.identifier || this.queue.current?.info?.identifier}&list=RD${this.queue.previous.info.identifier || this.queue.current.info.identifier}`;
 
             const response = await this.blue.search({ query: data }).catch(() => null);
-            if (!response || !response.tracks?.length || [Types.LOAD_ERROR, Types.LOAD_EMPTY].includes(response.loadType))
-                return (await this.stop());
+            if (!response || !response.tracks?.length) throw new Error("Track not found, for autoplay.");
 
             response.tracks.shift();
             
@@ -283,6 +368,34 @@ class Player {
             ];
 
             this.queue.add(track);
+            await this.play();
+
+            return this;
+        } catch (e) {
+            console.log(e)
+            return (await this.destroy());
+        }
+    }
+
+    /**
+     * @returns object of this class when song found, or else error.
+     */
+    private async rawAutoplay(): Promise<any> {
+        try {
+            const search: Track | any = await this.blue.load.spotify.search(this.queue.current?.info?.title || this.queue.previous?.info?.title).catch(() => null);
+
+            if(!search) throw new Error("Track not found, for autoplay.");
+
+            const res = await this.blue.load.spotify.getRecommendations(search?.info?.identifier);
+
+            if(!res?.length) throw new Error("Track not found, for autoplay.");
+
+            const track: Track = res[
+                Math.floor(Math.random() * Math.floor(res.length))
+            ];
+
+            this.queue.add(track);
+            
             await this.play();
 
             return this;

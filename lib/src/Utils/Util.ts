@@ -1,60 +1,59 @@
 import Node from "../Connectors/Node";
+import { Blue } from "../Connectors/Node";
 import { client_name, default_platform } from "../config.json";
 import Libs from "./Libs";
+import { Options as DefaultPackets, VoiceConnection as Options, NodeOptions as NodePacket } from "../Blue";
 
+/**
+ * Represents a platform.
+ */
 interface Platform {
     [key: string]: string;
 }
 
+/**
+ * Supported platforms with their corresponding search types.
+ */
 const supportedPlatforms: Platform = {
     "youtube": "ytsearch",
     "youtube music": "ytmsearch",
     "soundcloud": "scsearch"
 };
 
-interface Options {
-    guildId: string;
-    voiceChannel: string;
-    textChannel: string;
+/**
+ * Extends the Blue interface with additional method 'verifyVersion'.
+ */
+interface BlueStruct extends Blue {
+    verifyVersion: (arg: string) => any
 }
 
-interface NodePacket {
-    host: string;
-    password: string;
-    port: number;
-    secure: boolean;
-    version?: string;
-}
-
-interface DefaultPacket {
-    library: Libs;
-    defaultSearchEngine?: keyof Platform;
-    autoplay?: boolean;
-}
-
-interface BluetsOptions {
-    host: string;
-    password: string;
-    port: number;
-    secure: boolean;
-    defaultSearchEngine: string;
-    autoplay: boolean;
-    library: Libs;
-}
-
+/**
+ * Utility class for various operations.
+ */
 class Util {
-    private blue: any;
+    private blue: BlueStruct;
 
-    constructor(blue: any) {
+    /**
+     * Constructs a new Util instance.
+     * @param blue - The Blue object.
+     */
+    constructor(blue: BlueStruct) {
         this.blue = blue;
     }
 
-    async checkParamsValidity<T extends DefaultPacket>(nodePackets: NodePacket[], defaultPackets: T): Promise<any> {
+    /**
+     * Checks the validity of parameters passed to the bluets constructor.
+     * @param nodePackets - Node packets.
+     * @param defaultPackets - Default packets.
+     * @returns The Node object.
+     * @throws Errors if invalid arguments are passed.
+     */
+    public async checkParamsValidity<T extends DefaultPackets>(nodePackets: NodePacket[], defaultPackets: T): Promise<any> {
         if (!nodePackets || !defaultPackets.library || nodePackets.length < 1) {
             throw new Error("Invalid arguments passed to the bluets constructor.");
         }
 
-        const supportedLibraries = [Libs.DiscordJs, Libs.Eris, Libs.OceanicJS];
+        const supportedLibraries: string[] = [Libs.DiscordJs, Libs.Eris, Libs.OceanicJS];
         if (!supportedLibraries.includes(defaultPackets.library)) {
             throw new Error("Supported Libraries: DiscordJs | Eris | OceanicJs, but received Unknown#Lib");
         }
@@ -65,7 +64,7 @@ class Util {
             }
 
             this.blue.node = new Node(this.blue, packet, defaultPackets);
-            this.blue.version = typeof packet.version === "string" ? await this.blue.verify_version(packet.version) : "v4";
+            this.blue.version = typeof defaultPackets.version === "string" ? await this.blue.verifyVersion(defaultPackets.version) : "v4";
             this.blue.node.connect();
         }
 
@@ -81,13 +80,20 @@ class Util {
             secure: nodePackets[0].secure,
             defaultSearchEngine: defaultSearchEngine ? supportedPlatforms[defaultSearchEngine] || default_platform : default_platform,
             autoplay: defaultPackets.autoplay || false,
-            library: defaultPackets.library
+            library: defaultPackets.library,
         };
+        if(Array.isArray(defaultPackets?.plugins)) this.blue.options.plugins = defaultPackets?.plugins
 
         return this.blue.node;
     }
 
-    checkObjectValidity<T extends Options>(options: T): boolean {
+    /**
+     * Checks the validity of an object.
+     * @param options - The options object.
+     * @returns A boolean indicating validity.
+     * @throws Errors if options are invalid.
+     */
+    public checkObjectValidity<T extends Options>(options: T): boolean {
         const { guildId, voiceChannel, textChannel } = options;
 
         if (!guildId) {
@@ -117,16 +123,31 @@ class Util {
         return true;
     }
 
-    base64encode(input: string): string {
+    /**
+     * Encodes a string to base64.
+     * @param input - The input string.
+     * @returns The base64 encoded string.
+     */
+    public base64encode(input: string): string {
         return Buffer.from(input).toString('base64');
     }
 
-    base64decode(input: string): string | boolean {
+    /**
+     * Decodes a base64 string.
+     * @param input - The input base64 string.
+     * @returns The decoded string or false if input is not valid base64.
+     */
+    public base64decode(input: string): string | boolean {
         if(!this.isBase64(input)) return false;
         return Buffer.from(input, 'base64').toString('utf-8');
     }
 
-    isBase64(input: string): boolean {
+    /**
+     * Checks if a string is valid base64.
+     * @param input - The input string.
+     * @returns A boolean indicating validity.
+     */
+    public isBase64(input: string): boolean {
         const validBase64Chars = /^[A-Za-z0-9+/]*=?=?$/;
         if (!validBase64Chars.test(input)) {
             return false;
@@ -145,7 +166,13 @@ class Util {
         }
     }
 
-    durationInMs(time: string | number): number {
+    /**
+     * Converts time duration to milliseconds.
+     * @param time - The time duration.
+     * @returns The duration in milliseconds.
+     * @throws Errors for invalid time formats or values.
+     */
+    public durationInMs(time: string | number): number {
         if (!time && time !== 0) {
             throw new RangeError("'time' parameter must be present and of string type with a value greater than 0.");
         }

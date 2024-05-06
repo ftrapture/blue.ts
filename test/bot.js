@@ -1,7 +1,7 @@
 //test bot src
 
 const { Client, Intents } = require("discord.js");
-const { Blue, Events, Types, Library } = require("../build/");
+const { Blue, Events, Types, Library } = require("blue.ts");
 
 const client = new Client({
   failIfNotExists: false,

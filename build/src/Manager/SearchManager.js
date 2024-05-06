@@ -8,13 +8,20 @@ const Youtube_1 = __importDefault(require("../Platforms/Youtube"));
 const SoundCloud_1 = __importDefault(require("../Platforms/SoundCloud"));
 const Spotify_1 = __importDefault(require("../Platforms/Spotify"));
 const Types_1 = __importDefault(require("../Utils/Types"));
-const Track_1 = __importDefault(require("../Structure/Track"));
+const Methods_1 = __importDefault(require("../Utils/Methods"));
+/**
+ * Search class for handling search operations.
+ */
 class Search {
     blue;
     youtube;
     spotify;
     soundcloud;
     source;
+    /**
+     * Constructs a new Search instance.
+     * @param blue - The Blue instance.
+     */
     constructor(blue) {
         this.blue = blue;
         this.youtube = new Youtube_1.default(this.blue);
@@ -22,6 +29,11 @@ class Search {
         this.soundcloud = new SoundCloud_1.default(this.blue);
         this.source = this.blue.options.defaultSearchEngine;
     }
+    /**
+     * Fetches data based on the provided parameter.
+     * @param param - The parameter to fetch data.
+     * @returns A promise resolving to any.
+     */
     async fetch(param) {
         const query = typeof param === "string" ? param : param?.query || null;
         if (!query)
@@ -34,10 +46,20 @@ class Search {
         }
         return this.handleNonUrlQuery(query);
     }
+    /**
+     * Checks if a given string is a valid URL.
+     * @param query - The string to check.
+     * @returns True if the string is a valid URL, false otherwise.
+     */
     isValidUrl(query) {
         const urlRegex = /(?:https?|ftp):\/\/[\n\S]+/gi;
         return urlRegex.test(query);
     }
+    /**
+     * Handles a URL query.
+     * @param query - The URL query.
+     * @returns A promise resolving to any.
+     */
     async handleUrlQuery(query) {
         const spotifyEntityInfo = await this.spotify.getSpotifyEntityInfo(query).catch(() => null);
         if (spotifyEntityInfo?.type === "album") {
@@ -72,6 +94,11 @@ class Search {
         }
         return (await this.fetchRawData(`${this.blue.version}/loadtracks`, `identifier=${encodeURIComponent(query)}`));
     }
+    /**
+     * Handles a non-URL query.
+     * @param query - The non-URL query.
+     * @returns A promise resolving to any.
+     */
     async handleNonUrlQuery(query) {
         let data;
         switch (this.source) {
@@ -96,7 +123,7 @@ class Search {
                         tracks.data[i].info.isrc = data.info.isrc;
                         tracks.data[i].type = data.type;
                         tracks.data[i].info.uri = data.info.uri;
-                        builtTracks.push(new Track_1.default(tracks.data[i]));
+                        builtTracks.push(tracks.data[i]);
                     }
                     return {
                         loadType: Types_1.default.LOAD_SP_TRACK,
@@ -109,11 +136,17 @@ class Search {
         }
         return data;
     }
+    /**
+     * Fetches raw data from the specified endpoint.
+     * @param endpoint - The endpoint to fetch from.
+     * @param identifier - The identifier for the data.
+     * @returns A promise resolving to any.
+     */
     async fetchRawData(endpoint, identifier) {
         try {
             const url = `http${this.blue.options.secure ? "s" : ""}://${this.blue.options.host}:${this.blue.options.port}/${endpoint}?${identifier}`;
             const response = await (0, undici_1.fetch)(url, {
-                method: "GET",
+                method: Methods_1.default.Get,
                 headers: {
                     "Content-Type": "application/json",
                     'Authorization': this.blue.options.password

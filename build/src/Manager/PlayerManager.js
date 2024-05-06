@@ -8,6 +8,9 @@ const Events_1 = __importDefault(require("../Utils/Events"));
 const PlayerEventManager_1 = __importDefault(require("./PlayerEventManager"));
 const FilterManager_1 = __importDefault(require("./FilterManager"));
 const Types_1 = __importDefault(require("../Utils/Types"));
+/**
+ * Player class
+ */
 class Player {
     blue;
     volume;
@@ -27,6 +30,9 @@ class Player {
     options;
     loop;
     event;
+    /**
+     * Constructor
+     */
     constructor(blue, options) {
         this.blue = blue;
         this.volume = 100;
@@ -54,18 +60,29 @@ class Player {
         this.blue.emit(Events_1.default.playerCreate, this);
         this.event = new PlayerEventManager_1.default(this);
     }
+    /**
+     * Check if player is paused
+     */
     isPaused() {
         return this.paused;
     }
+    /**
+     * Check if player is connected
+     */
     isConnected() {
         return this.connected;
     }
+    /**
+     * Play function
+     */
     async play(options = {}) {
         if (this.queue.isEmpty())
             return this;
         this.queue.current = this.queue.shift();
+        if (!this.queue.current?.info?.identifier)
+            return this;
         const datas = this.queue.current;
-        if (this.queue.current?.type === "playlist_track" || this.queue.current?.type === "album_track") {
+        if (["album_track", "recommend_track", "playlist_track"].includes(this.queue.current?.type)) {
             this.queue.current = await this.search();
             await this.updateTrackInfo(datas);
         }
@@ -89,12 +106,18 @@ class Player {
             this.blue.emit(Events_1.default.trackError, this, this.queue.current, null);
         }
     }
+    /**
+     * Search function
+     */
     async search() {
         let data = await this.blue.search({ query: `${this.queue.current.info.title} ${this.queue.current.info.author}`, source: "youtube music" }).catch(() => null);
         if (!data || !data.tracks?.length || [Types_1.default.LOAD_ERROR, Types_1.default.LOAD_EMPTY].includes(data.loadType))
             return null;
         return data.tracks[0];
     }
+    /**
+     * Connect function
+     */
     connect() {
         this.send({
             guild_id: this.guildId,
@@ -104,15 +127,24 @@ class Player {
         });
         this.connected = true;
     }
+    /**
+     * Send function
+     */
     send(data) {
         this.blue.send({ op: 4, d: data });
     }
+    /**
+     * Update track info function
+     */
     updateTrackInfo(datas) {
         this.queue.current.info.sourceName = datas.info.sourceName;
         this.queue.current.info.isrc = datas.info.isrc;
         this.queue.current.type = datas.type;
         this.queue.current.info.uri = datas.info.uri;
     }
+    /**
+     * Stop function
+     */
     stop() {
         this.position = 0;
         this.playing = false;
@@ -122,6 +154,9 @@ class Player {
         });
         return this;
     }
+    /**
+     * Disconnect function
+     */
     disconnect() {
         if (this.voiceChannel === null)
             return null;
@@ -140,9 +175,15 @@ class Player {
         this.blue.players.delete(this.guildId);
         return this;
     }
+    /**
+     * Destroy function
+     */
     destroy() {
         return this.disconnect();
     }
+    /**
+     * Pause function
+     */
     pause(pause = true) {
         if (typeof pause !== "boolean")
             throw new TypeError("blue.ts :: Pause function must be passed a boolean value.");
@@ -154,6 +195,9 @@ class Player {
         this.paused = pause;
         return this;
     }
+    /**
+     * Set loop function
+     */
     setLoop(query) {
         if (!query || !["queue", "track", "none"].includes(query.toLowerCase()))
             this.loop = "none";
@@ -161,7 +205,10 @@ class Player {
             this.loop = query.toLowerCase();
         return this;
     }
-    setVoiceChannel(channel, options = {}) {
+    /**
+     * Set voice channel function
+     */
+    setVoiceChannel(channel, options) {
         if (typeof channel !== "string")
             throw new TypeError(`'channel' must be contain only channel id.`);
         if (this.isConnected() && channel == this.voiceChannel)
@@ -175,12 +222,18 @@ class Player {
         this.connect();
         return this;
     }
+    /**
+     * Set text channel function
+     */
     setTextChannel(channel) {
         if (typeof channel !== "string")
             throw new TypeError(`'channel' must be contain only channel id.`);
         this.textChannel = channel;
         return this;
     }
+    /**
+     * Set volume function
+     */
     setVolume(integer = this.volume) {
         if (Number.isNaN(integer))
             throw new RangeError("blue.ts :: Volume level must be a number.");
@@ -190,6 +243,9 @@ class Player {
         this.volume = integer;
         return this;
     }
+    /**
+     * Seek function
+     */
     seek(position) {
         if (typeof position === "string") {
             position = parseInt(position);
@@ -211,16 +267,42 @@ class Player {
         this.blue.node.rest.updatePlayer({ guildId: this.guildId, data: { position } });
         return this;
     }
+    /**
+     * Autoplay function
+     */
     async autoplay() {
         try {
-            if (!["ytsearch", "ytmsearch", "youtube", "youtube music", "spotify"].includes(this.blue.load.source))
-                return;
+            if (!this.queue.previous?.info?.identifier && !this.queue.current?.info?.identifier)
+                throw new Error("Could not search for autoplay tracks.");
+            if (!["ytsearch", "ytmsearch", "youtube", "youtube music"].includes(this.blue.load.source))
+                return this.rawAutoplay();
             const data = `https://www.youtube.com/watch?v=${this.queue.previous?.info?.identifier || this.queue.current?.info?.identifier}&list=RD${this.queue.previous.info.identifier || this.queue.current.info.identifier}`;
             const response = await this.blue.search({ query: data }).catch(() => null);
-            if (!response || !response.tracks?.length || [Types_1.default.LOAD_ERROR, Types_1.default.LOAD_EMPTY].includes(response.loadType))
-                return (await this.stop());
+            if (!response || !response.tracks?.length)
+                throw new Error("Track not found, for autoplay.");
             response.tracks.shift();
             const track = response.tracks[Math.floor(Math.random() * Math.floor(response.tracks.length))];
+            this.queue.add(track);
+            await this.play();
+            return this;
+        }
+        catch (e) {
+            console.log(e);
+            return (await this.destroy());
+        }
+    }
+    /**
+     * @returns object of this class when song found, or else error.
+     */
+    async rawAutoplay() {
+        try {
+            const search = await this.blue.load.spotify.search(this.queue.current?.info?.title || this.queue.previous?.info?.title).catch(() => null);
+            if (!search)
+                throw new Error("Track not found, for autoplay.");
+            const res = await this.blue.load.spotify.getRecommendations(search?.info?.identifier);
+            if (!res?.length)
+                throw new Error("Track not found, for autoplay.");
+            const track = res[Math.floor(Math.random() * Math.floor(res.length))];
             this.queue.add(track);
             await this.play();
             return this;

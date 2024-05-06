@@ -1,3 +1,6 @@
+/**
+ * Enum representing text colors for console output.
+ */
 declare enum TextColor {
     Black = "\u001B[30m",
     Red = "\u001B[31m",
@@ -8,6 +11,9 @@ declare enum TextColor {
     Cyan = "\u001B[36m",
     White = "\u001B[37m"
 }
+/**
+ * Extending the String prototype to add color methods.
+ */
 declare global {
     interface String {
         Black(): string;
@@ -21,4 +27,3 @@ declare global {
     }
 }
 export { TextColor };
-export {};

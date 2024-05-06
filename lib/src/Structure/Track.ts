@@ -1,7 +1,17 @@
 import { Track } from "../Platforms/Spotify";
 
+/**
+ * TrackStructure class for structuring track information.
+ */
 class TrackStructure {
+    /**
+     * The token representing the track.
+     */
     public trackToken: string;
+
+    /**
+     * Information about the track.
+     */
     public info: {
         identifier: string | null | undefined,
         author: string | null | undefined,
@@ -14,7 +24,16 @@ class TrackStructure {
         position: number | null | undefined,
         isrc: string | number | null | undefined,
     };
+
+    /**
+     * The type of the track.
+     */
     public type: string;
+
+    /**
+     * Constructs a new TrackStructure instance.
+     * @param track - The track object.
+     */
     constructor(track: Track) {
         this.trackToken = track.encoded;
         this.info = {
@@ -28,7 +47,6 @@ class TrackStructure {
             position: track.info.position,
             isrc: track.info.isrc,
             title: track.info.title,
-
         }
         this.type = track.type;
     }

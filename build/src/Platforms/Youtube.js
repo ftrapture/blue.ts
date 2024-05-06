@@ -1,16 +1,33 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const undici_1 = require("undici");
+const Methods_1 = __importDefault(require("../Utils/Methods"));
+/**
+ * Youtube class for handling YouTube operations.
+ */
 class Youtube {
     blue;
+    /**
+     * Constructs a new Youtube instance.
+     * @param blue - The Blue instance.
+     */
     constructor(blue) {
         this.blue = blue;
     }
+    /**
+     * Searches for tracks on YouTube.
+     * @param query - The query to search for.
+     * @param type - The type of search (default is "ytmsearch").
+     * @returns A promise resolving to any or an Error.
+     */
     async search(query, type = "ytmsearch") {
         try {
             const url = `http${this.blue.options.secure ? "s" : ""}://${this.blue.options.host}:${this.blue.options.port}/${this.blue.version}/loadtracks?identifier=${encodeURIComponent(`${type}:${query}`)}`;
             const response = await (0, undici_1.fetch)(url, {
-                method: "GET",
+                method: Methods_1.default.Get,
                 headers: {
                     "Content-Type": "application/json",
                     'Authorization': this.blue.options.password

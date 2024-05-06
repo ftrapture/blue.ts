@@ -1,4 +1,6 @@
-
+/**
+ * Enum representing text colors for console output.
+ */
 enum TextColor {
     Black = '\x1b[30m',
     Red = '\x1b[31m',
@@ -10,6 +12,9 @@ enum TextColor {
     White = '\x1b[37m'
 }
 
+/**
+ * Extending the String prototype to add color methods.
+ */
 declare global {
     interface String {
         Black(): string;
@@ -56,4 +61,3 @@ String.prototype.White = function (): string {
 };
 
 export { TextColor };
-export {};

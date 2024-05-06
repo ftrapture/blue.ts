@@ -1,5 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * Class representing an Object Pool.
+ */
 class ObjectPool {
     pool;
     currentIndex;
@@ -8,6 +11,14 @@ class ObjectPool {
     validateFn;
     resizeFactor;
     timeout;
+    /**
+     * Constructs a new ObjectPool instance.
+     * @param size - The initial size of the pool.
+     * @param initializeFn - The function used to initialize objects in the pool.
+     * @param validateFn - The function used to validate objects before releasing them.
+     * @param resizeFactor - The factor by which the pool should resize when it's full.
+     * @param timeout - The time (in milliseconds) after which idle objects are removed from the pool.
+     */
     constructor({ size = 10, initializeFn = () => ({}), validateFn = () => true, resizeFactor = 2, timeout = 30000, } = {}) {
         this.pool = new Array(size).fill(null).map(() => initializeFn());
         this.currentIndex = 0;
@@ -17,6 +28,10 @@ class ObjectPool {
         this.resizeFactor = resizeFactor;
         this.timeout = timeout;
     }
+    /**
+     * Acquires an object from the pool.
+     * @returns The acquired object.
+     */
     acquire() {
         let obj = null;
         if (this.currentIndex < this.pool.length) {
@@ -30,6 +45,10 @@ class ObjectPool {
         }
         return obj;
     }
+    /**
+     * Releases an object back to the pool.
+     * @param obj - The object to release.
+     */
     release(obj) {
         if (!this.validateFn(obj))
             return;

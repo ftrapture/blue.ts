@@ -2,15 +2,29 @@ import QueueManager from "./QueueManager";
 import PlayerEvents from "./PlayerEventManager";
 import Filters from "./FilterManager";
 import Track from "../Structure/Track";
-interface PlayerOptions {
+import { Blue } from "../Connectors/Node";
+import { Player as PlayerOption, VoiceConnection } from "../Blue";
+/**
+ * Player Options interface
+ */
+export interface PlayerOptions {
     guildId?: string | null;
     textChannel?: string | null;
     voiceChannel?: string | null;
     selfMute?: boolean;
     selfDeaf?: boolean;
 }
-interface Filter extends Filters {
-    player: any;
+/**
+ * Interface for Blue structure
+ */
+interface BlueStruct extends Blue {
+    search: (...args: any) => Promise<any>;
+}
+/**
+ * Interface for Filter
+ */
+export interface Filter extends Filters {
+    player: PlayerOption;
     volume: number;
     equalizer: any[];
     karaoke: any;
@@ -22,23 +36,35 @@ interface Filter extends Filters {
     lowPass: any;
     timeScaler: any;
 }
-type Loop = "none" | "queue" | "track";
-interface PlayerEvent extends PlayerEvents {
+/**
+ * Loop type
+ */
+export type Loop = "none" | "queue" | "track";
+/**
+ * Interface for PlayerEvent
+ */
+export interface PlayerEvent extends PlayerEvents {
     TrackStartEvent: (...args: any) => void;
     TrackEndEvent: (...args: any) => void;
     TrackStuckEvent: (...args: any) => void;
     TrackExceptionEvent: (...args: any) => void;
     WebSocketClosedEvent: (...args: any) => void;
 }
-interface Queue extends QueueManager {
+/**
+ * Interface for Queue
+ */
+export interface Queue extends QueueManager {
     buffer: any[];
     head: number;
     tail: number;
     previous: any | null;
     current: any | null;
 }
+/**
+ * Player class
+ */
 declare class Player {
-    blue: any;
+    blue: BlueStruct;
     volume: number;
     playing: boolean;
     queue: Queue;
@@ -56,23 +82,81 @@ declare class Player {
     options: PlayerOptions;
     loop: Loop;
     event: PlayerEvent;
-    constructor(blue: any, options: PlayerOptions);
+    /**
+     * Constructor
+     */
+    constructor(blue: BlueStruct, options: PlayerOptions);
+    /**
+     * Check if player is paused
+     */
     isPaused(): boolean;
+    /**
+     * Check if player is connected
+     */
     isConnected(): boolean;
-    play(options?: any): Promise<this>;
-    search(): Promise<Track | null | undefined>;
+    /**
+     * Play function
+     */
+    play(options?: any): Promise<this | void>;
+    /**
+     * Search function
+     */
+    private search;
+    /**
+     * Connect function
+     */
     connect(): void;
+    /**
+     * Send function
+     */
     send(data: any): void;
+    /**
+     * Update track info function
+     */
     updateTrackInfo(datas: Track): void;
+    /**
+     * Stop function
+     */
     stop(): this;
+    /**
+     * Disconnect function
+     */
     disconnect(): this;
+    /**
+     * Destroy function
+     */
     destroy(): this;
+    /**
+     * Pause function
+     */
     pause(pause?: boolean): this;
+    /**
+     * Set loop function
+     */
     setLoop(query: Loop): this;
-    setVoiceChannel(channel: string, options?: any): this;
+    /**
+     * Set voice channel function
+     */
+    setVoiceChannel(channel: string, options: VoiceConnection): this;
+    /**
+     * Set text channel function
+     */
     setTextChannel(channel: string): this;
+    /**
+     * Set volume function
+     */
     setVolume(integer?: number): this;
+    /**
+     * Seek function
+     */
     seek(position: string | number): this;
-    autoplay(): Promise<this>;
+    /**
+     * Autoplay function
+     */
+    autoplay(): Promise<this | Error>;
+    /**
+     * @returns object of this class when song found, or else error.
+     */
+    private rawAutoplay;
 }
 export default Player;

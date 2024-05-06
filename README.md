@@ -1,41 +1,50 @@
-<h1 align="center">
-  Blue.ts
-  <br>
-</h1>
-
-<p align="center">Blue.ts is a powerful simple but effective stable lavalink client developed in typescript.</p>
+<div align="center">
+ <img src="https://raw.githubusercontent.com/ftrapture/blue.ts/main/assets/banner.png" alt="Blue.ts Banner" width="800">
+ <h1>Blue.ts</h1>
+ <p>A powerful, simple, and effective stable Lavalink client developed in TypeScript.</p>
+ <p>
+   <a href="#features">Features</a>
+   •
+   <a href="#requirements">Requirements</a>
+   •
+   <a href="#installation">Installation</a>
+   •
+   <a href="#quickstart">Quick Start</a>
+   •
+   <a href="#documentation">Documentation</a>
+   •
+   <a href="#issues">Issues</a>
+   •
+   <a href="#license">License</a>
+ </p>
+ <br>
+</div>
 <br>
-
-
-<p align="center">
-  <a href="#requirements">Requirements</a>
-  •
-  <a href="#installation">Guide</a>
-  •
-  <a href="#features">Features</a>
-  •
-  <a href="#issues">Issues</a>
-</p>
+<div>
+ <h2 id="features">✨ Features</h2>
+ <ul>
+   <li>💿 Audio playback with fully-featured controls</li>
+   <li>🎚️ Filters support</li>
+   <li>🔍 Best search engines: YouTube, Spotify, SoundCloud</li>
+   <li>🔄 Advanced autoplay feature</li>
+   <li>⚡ Faster, simple, and stable client</li>
+   <li>🆙 Supports the latest Lavalink version: 4.0.4</li>
+   <li>🌐 Compatible with discord.js, eris, oceanicjs</li>
+   <li>🔌 Plugins support</li>
+ </ul>
+</div>
 <br>
+<div>
+ <h2 id="requirements">⚙️ Requirements</h2>
+ <ul>
+   <li><a href="https://nodejs.org/en/download">Node.js</a> Version: >= 16.9.0</li>
+   <li>A Lavalink server, here are some free Lavalink servers: <a href="https://lavalink.darrennathanael.com/">Click Me</a></li>
+   <li>Discord Bot <a href="https://discord.com/developers/applications">token</a> to get started</li>
+ </ul>
+</div>
 
-## Features
-
-- Audio playback fully featured controls.
-- Filters support.
-- Best search engines: (Youtube, Spotify, Soundcloud).
-- Autoplay feature.
-- Faster, simple and stable client.
-- Supports latest Lavalink version: 4.0.4.
-- Compatible with discord.js, eris, oceanicjs.
-- Plugins support.
-
-## Requirements
-
-- [Node](https://nodejs.org/en/download) Version: >= 16.9.0
-- A Lavalink server, here are some free lavalink server: [Click Me](https://lavalink.darrennathanael.com/)
-- Discord Bot [token](https://discord.com/developers/applications) to get started.
-
-## Installation
+<br>
+<h2 id="installation">📥 Installation</h2>
 
 ```bash
 # npm add
@@ -43,52 +52,18 @@ npm install blue.ts
 # yarn add
 yarn add blue.ts
 ```
-
-## Quick Start With Djs 13
+<br>
+ <h2 id="quickstart">🚀 Quick Start with Discord.js 13</h2>
 
 ```javascript
 const { Client, Intents } = require("discord.js");
 const { Blue, Events, Types, Library } = require("blue.ts");
 
 const client = new Client({
-  failIfNotExists: false,
-  allowedMentions: {
-    parse: ['roles', 'users'],
-    repliedUser: false,
-  },
-  partials: [
-    'MESSAGE',
-    'CHANNEL',
-    'REACTION',
-    'GUILD_MEMBER',
-    'USER'
-  ],
-  intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MEMBERS,
-    Intents.FLAGS.GUILD_BANS,
-    Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS,
-    Intents.FLAGS.GUILD_INTEGRATIONS,
-    Intents.FLAGS.GUILD_WEBHOOKS,
-    Intents.FLAGS.GUILD_INVITES,
-    Intents.FLAGS.GUILD_VOICE_STATES,
-    Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-    Intents.FLAGS.GUILD_MESSAGE_TYPING,
-    Intents.FLAGS.DIRECT_MESSAGES,
-    Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
-  ],
-  presence: {
-    activities: [
-      {
-        name: 'Blue.js',
-        type: "LISTENING",
-      },
-    ],
-    status: 'online',
-  }
+  //...client constructor
 });
 
+//Lavalink Nodes
 const nodes = [
   {
     host: "localhost",
@@ -98,6 +73,7 @@ const nodes = [
   }
 ];
 
+//Blue Manager Options
 const options = {
   spotify: {
     client_id: "CLIENT_ID",  //spotify client ID
@@ -107,132 +83,70 @@ const options = {
   version: "v4",
   library: Library.DiscordJs
 };
+
+//Declaring the manager
 client.manager = new Blue(nodes, options);
 
+//ready event handler to initiate the manager
 client.on("ready", async () => {
   console.log("Client is ready!");
   client.manager.init(client);
 });
 
-client.manager.on(Events.nodeConnect, (a, b) => {
-  console.log(b);
-});
-
-client.manager.on(Events.nodeDisconnect, (a, b) => {
-  console.log(b);
-});
-
-client.manager.on(Events.trackStart, async(a, b) => {
-   const guild = await client.guilds.fetch(a.guildId).catch(() => null);
-   if(!guild) return;
-   const channel = await guild.channels.fetch(a.textChannel).catch(() => null);
-   if(!channel) return;
-   return channel.send(`Track Started: [${b.title}](${b.uri})`);
-});
-
-//logging
-/*
-client.manager.on(Events.api, (data) => {
-  console.log(data);
-});*/
-
 client.on("messageCreate", async (message) => {
-  if (message.author.bot || !message.guild || !message.channel) return;
+  if(message.author.bot) return;
+  if(message.content.startsWith("!play")) {
 
-  const prefix = ">";
-  let player = client.manager.players.get(message.guild.id);
+    let player = client.manager.players.get(message.guild.id);
 
-  if (!message.content.toLowerCase().startsWith(prefix)) return;
-
-  const args = message.content.slice(prefix.length).trim().split(/ +/);
-  const cmd = args.shift()?.toLowerCase();
-
-  if (cmd == "play") {
-    if (!message.member?.voice.channel) return message.reply("you must be in a voice channel");
-
-    const query = args.slice(0).join(" ");
-
-    if (!query) return message.reply("provide the query");
-
-    if (!player)
+    if(!player) {
       player = await client.manager.create({
-        voiceChannel: message.member.voice.channel.id,
-        textChannel: message.channel.id,
+        voiceChannel: message.member?.voice?.channel?.id || null,
+        textChannel: message.channel?.id,
         guildId: message.guild.id,
         selfDeaf: true,
         selfMute: false
       });
+    }
 
-    const res = await client.manager.search({ query: query }, message.author).catch(() => null);
+    const res = await client.manager.search({ query: "summertime sadness", source: "spotify" }, message.author);
+
     if (!res) return message.reply("song not found");
+
     if (res.loadType == Types.LOAD_SP_ALBUMS || res.loadType == Types.LOAD_SP_PLAYLISTS) {
-      player.queue.add(...res.items);
+      player.queue.add(...res.tracks);
+      message.reply(`Loaded **${res.length}** tracks from \`${res.name}\``);
     } else {
       player.queue.add(res.tracks[0]);
+      message.reply(`Track: **${res.tracks[0].info.title}** added to queue.`);
     }
     if (!player.queue?.current)
       player.play();
-    return message.reply("queued song");
-  }
-
-  if (cmd == "skip") {
-    if (!player || !player.isConnected) return message.reply("player not initialized yet.");
-    if (player.queue.size() < 1 && !player.playing) {
-      player.disconnect();
-      return message.reply("there's no song to skip.");
-    }
-    player.stop();
-    return message.reply("skipped to the next song.");
-  }
-
-  if (cmd == "stop") {
-    if (!player || !player.isConnected) return message.reply("player not initialized yet.");
-    player.disconnect();
-    return message.reply("stopped the song, and left the vc");
-  }
-
-  if (cmd == "replay") {
-    if (!player || !player.queue.current) return message.reply("Nothing playing rn.");
-    player.seek(0);
-    return message.reply("alr playing from the beginning.");
-  }
-
-  if (cmd == "seek") {
-    if (!args[0]) return message.reply("provide the position");
-    if (!player || !player.queue.current) return message.reply("Nothing playing rn.");
-    player.seek(args.slice(0).join(" "));
-    return message.reply("alr player position sets to " + player.position);
-  }
-
-  if (cmd == "8d") {
-    if (!player || !player.queue.current) return message.reply("Nothing playing rn.");
-    if(player.filter.is8D)
-      player.filter.set8D(false);
-    else
-      player.filter.set8D(true);
-    return message.reply(`filter has been added`);
-  }
-  
-  if (cmd == "clear") {
-    if (!player || !player.queue.current) return message.reply("Nothing playing rn.");
-    player.filter.clearFilters();
-    return message.reply(`filters has been cleared`);
   }
 });
 
+//Replace the TOKEN with the actual bot token
 client.login("TOKEN");
 ```
-
-## Documentation
-
-Check out the [documentation](https://github.com/ftrapture/blue.ts/wiki) for detailed usage instructions and examples.
-
-## Issues
-
-For any inquiries or issues, feel free to [open an issue](https://github.com/ftrapture/blue.ts/issues) on GitHub.
-
-## License
-
-This project is licensed under the ISC License.
-
-By [Rapture](https://github.com/ftrapture)
+<br>
+<div>
+ <h2 id="documentation">📚 Documentation</h2>
+ <p>Check out the <a href="https://github.com/ftrapture/blue.ts/wiki">documentation</a> for detailed usage instructions and examples.</p>
+</div>
+<br>
+<div>
+ <h2 id="issues">🐞 Issues</h2>
+ <p>For any inquiries or issues, feel free to <a href="https://github.com/ftrapture/blue.ts/issues">open an issue</a> on GitHub.</p>
+</div>
+<br>
+<div>
+ <h2 id="license">📜 License</h2>
+ <p>This project is licensed under the <a href="https://github.com/ftrapture/blue.ts/blob/main/LICENSE">ISC License</a>.</p>
+</div>
+<br>
+<br>
+<div align="center">
+ <a href="https://github.com/ftrapture">
+   <img src="https://raw.githubusercontent.com/ftrapture/blue.ts/main/assets/footer.png" alt="Blue.ts Footer" width="800">
+ </a>
+</div>

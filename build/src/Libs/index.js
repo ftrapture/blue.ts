@@ -7,13 +7,25 @@ const Discord_1 = __importDefault(require("./Discord"));
 const Oceanic_1 = __importDefault(require("./Oceanic"));
 const Eris_1 = __importDefault(require("./Eris"));
 const Libs_1 = __importDefault(require("../Utils/Libs"));
+/**
+ * Library class
+ */
 class Library {
+    /**
+     * Instance of the blue client
+     */
     blue;
+    /**
+     * Library name
+     */
     lib;
     constructor(lib, blue) {
         this.lib = lib;
         this.blue = blue;
     }
+    /**
+     * Main function to initialize the library
+     */
     main() {
         switch (this.lib) {
             case Libs_1.default.DiscordJs:

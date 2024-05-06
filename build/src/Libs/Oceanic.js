@@ -4,7 +4,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const Events_1 = __importDefault(require("../Utils/Events"));
+/**
+ * OceanicJs class
+ */
 class OceanicJs {
+    /**
+     * Instance of the blue client
+     */
     blue;
     constructor(blue) {
         this.blue = blue;
@@ -12,6 +18,11 @@ class OceanicJs {
             await this.blue.voiceState.updateVoice(packet);
         });
     }
+    /**
+     * Send function to send data
+     * @param data - Data to send
+     * @returns Promise<any>
+     */
     send(data) {
         try {
             if (!data)

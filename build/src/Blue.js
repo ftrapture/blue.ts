@@ -13,31 +13,87 @@ const Node_1 = __importDefault(require("./Connectors/Node"));
 const SearchManager_1 = __importDefault(require("./Manager/SearchManager"));
 const Track_1 = __importDefault(require("./Structure/Track"));
 const index_1 = __importDefault(require("./Libs/index"));
+/**
+ * Event listeners amount has been set to 20, to get prevent of events calling out of bounds.
+ */
+node_events_1.EventEmitter.defaultMaxListeners = 20;
+/**
+* Main Module starts from here
+*/
 class Blue extends node_events_1.EventEmitter {
+    /**
+    * Hash map for storing the nodes, that has been passed from the manager constructor agrument.
+   */
     nodes;
+    /**
+    * Default Options:- version, autoplay, defaultSearchEngine, spotify API keys.
+   */
     _options;
+    /**
+    * Unchanged Options.
+   */
     options;
+    /**
+    * version of the lavalink is to be stored, that would be use.
+   */
     version;
+    /**
+    * Node Class
+   */
     node;
+    /**
+    * Search Class
+   */
     load;
+    /**
+    * all nodes are to be stored in an single array
+   */
     _nodes;
+    /**
+    * Utility and all the methods are stored in here
+   */
     util;
+    /**
+    * Client Options, contains the client id.
+   */
     client;
+    /**
+    * Voice State Class
+   */
     voiceState;
+    /**
+    * Players has map, all the active players will be stored here
+   */
     players;
+    /**
+    * available lavalink versions, by-default: v4
+   */
     _versions;
+    /**
+    * Send method, to send payloads to the guild shard.
+   */
     send;
+    /**
+    * all the available supported library is to be stored here
+   */
     Lib;
-    plugins;
+    /**
+    * Initiated indicates the main method has been called or not
+   */
     initiated;
-    constructor(nodes, options = {}) {
-        super({ ...options });
+    /**
+    * A parameterized constructor,
+    * This is the main class which actually handles the lavalink server and calls all the neccesary methods when needed.
+    * Usage - new Blue(nodes<Array>, options<DefaultOptions>);
+   */
+    constructor(nodes, options) {
+        super();
         if (!nodes)
-            throw new Error("You didn't provide a lavalink node");
+            throw new Error("You didn't provide a Lavalink node.");
         this.nodes = new Map();
         this._options = options;
         this.options = options;
-        this._versions = ["v4"]; //soon many versions will be there.
+        this._versions = ["v4"]; // More versions will be added soon.
         this.version = this._versions[0];
         this.node = null;
         this.load = new SearchManager_1.default(this);
@@ -48,35 +104,90 @@ class Blue extends node_events_1.EventEmitter {
         this.voiceState = new voiceStateUpdate_1.default(this);
         this.players = new Map();
     }
+    /**
+    * @returns a boolean state, to indicate whether it has been initiated or not
+   */
     get isInitiated() {
         return this.initiated;
     }
+    /**
+    * Calls the init (main method) to work with blue.ts.
+    * @param client.user.id: Id of the bot.
+    * @param client.on(): event listener, to get the session id and token
+    * @param client<Guild>.fetch() - to join the voice channel
+    * @returns the node obj
+   */
     init(client) {
-        this.initiated = true;
         this.client = client;
         this.util.checkParamsValidity([...this._nodes], { ...this.options });
-        this.Lib = new index_1.default(this.options.library, this).main();
+        this.Lib = new index_1.default(this.options.library, this);
+        this.Lib.main();
+        if (this._options?.plugins?.length > 0) {
+            this._options.plugins.forEach((plugin) => {
+                plugin.load(this);
+            });
+        }
+        this.initiated = true;
         return this.node;
     }
-    create(options = {}) {
+    /**
+    * Creates a new player
+    * @param options.textChannel - text channel id to bound the commands
+    * @param options.voiceChannel - voice channel id to join and play the songs
+    * @pram options.guildId - guild id where song will play
+    * @param options?.selfMute - (optional) whether the bot will join vc muted or not
+    * @param options?.selfDeaf - (optional) whether the bot will join vc defeaned or not
+    * @returns the created player.
+   */
+    create(options) {
         if (!this.isInitiated)
             throw new Error("Blue has not been initiated yet.");
         const check = this.util.checkObjectValidity(options);
         if (!check)
             return false;
         if (!this.node)
-            throw new TypeError("No nodes are available");
+            throw new TypeError("No nodes are available.");
         const player = this.node.rest.createPlayer(options);
         player.connect();
         return player;
     }
+    /**
+    * Get active/working nodes
+    * @returns all the active nodes
+   */
     activeNodes() {
         return this._nodes.filter(n => this.nodes.get(n.host)?.connected);
     }
-    verify_version(ver) {
+    /**
+    * verify the version of lavalink node
+    * @param ver - lavalink version
+    * @returns the boolean statement if it matches the version with the supported one
+   */
+    verifyVersion(ver) {
         return this._versions.find(v => v.toLowerCase() == ver.toLowerCase());
     }
-    activateNode(node = {}) {
+    /**
+    * activates a single/cluster of nodes.
+    * @param - either: {host, password, port, secure} or [{host1, password, port, secure}, {host2, password, port, secure}, ...rest];
+    * @returns either a  cluster of activated node or a single node
+   */
+    activateNode(nodes) {
+        if (Array.isArray(nodes)) {
+            return nodes.map(node => this.activateSingleNode(node));
+        }
+        else {
+            return this.activateSingleNode(nodes);
+        }
+    }
+    /***
+    * activates nodes
+    * @param node.host - identifier of the lavalink node,
+    * @param node.password - password of the node,
+    * @param node.port - port of the node.
+    * @param node.secure - whether the lavalink websocket connection supports ws or wss.
+    * @returns node obj
+   */
+    activateSingleNode(node) {
         this.options["host"] = node.host;
         this.options["password"] = node.password;
         this.options["port"] = node.port;
@@ -93,105 +204,162 @@ class Blue extends node_events_1.EventEmitter {
         this.node.connect();
         return this.node;
     }
+    /***
+    * Adds node to the library
+    * @param - nodes
+    * @returns: void (no return type)
+   */
     addNode(node) {
-        if (!node.host || !node.password || !node.port)
-            throw new Error("Provide valid node to add");
-        return this.nodes.set(node.host, this.activateNode(node));
+        if (Array.isArray(node)) {
+            node.forEach(n => {
+                if (!n.host || !n.password || !n.port) {
+                    throw new Error("Provide valid node to add");
+                }
+                const newNodes = this.activateNode(n);
+                if (Array.isArray(newNodes)) {
+                    newNodes.forEach(newNode => {
+                        this.nodes.set(newNode.info.host, newNode);
+                    });
+                }
+                else {
+                    this.nodes.set(newNodes.info.host, newNodes);
+                }
+            });
+        }
+        else {
+            if (!node.host || !node.password || !node.port) {
+                throw new Error("Provide valid node to add");
+            }
+            const newNode = this.activateNode(node);
+            if (Array.isArray(newNode)) {
+                newNode.forEach(newNodeItem => {
+                    this.nodes.set(newNodeItem.info.host, newNodeItem);
+                });
+            }
+            else {
+                this.nodes.set(newNode.info.host, newNode);
+            }
+        }
     }
+    /**
+    * Removes a node,
+    * @param - node,
+    * @returns either error or boolean statement
+   */
     removeNode(node) {
-        if (!node.info?.host || !node.info?.password || !node.info?.port)
+        if (!node.info?.host || !node.info?.password || !node.info?.port) {
             throw new Error("Provide valid node to remove");
+        }
         node.disconnect();
         return this.nodes.delete(node.info?.host);
     }
-    updateNode(node = {}) {
-        if (node)
-            return this.addNode(node);
-        let nodes = this._nodes.filter(n => n.host !== this.node?.info?.host);
-        let get_active_nodes = nodes.filter(n => this.nodes.get(n?.host)?.connected);
-        if (get_active_nodes.length > 0) {
-            return this.activateNode(get_active_nodes);
+    /**
+    * Updates a node,
+    * @param - node,
+    * @returns either error or boolean statement
+   */
+    updateNode(node) {
+        if (node) {
+            this.addNode(node);
+            return this.nodes.get(this.node.info["host"]);
         }
-        throw new Error("There are no active nodes are available.");
+        else {
+            let nodes = this._nodes.filter(n => n.host !== this.node?.info?.host);
+            let active_nodes = nodes.filter(n => this.nodes.get(n?.host)?.connected);
+            if (active_nodes.length > 0) {
+                this.activateNode(active_nodes);
+                return active_nodes;
+            }
+            else {
+                return new Error("There are no active nodes available.");
+            }
+        }
     }
+    /**
+    * Handles all the events,
+    * @param - Payloads,
+    * @returns: void (no return type)
+   */
     handleEvents(payload) {
-        if (!payload.guildId)
+        if (!payload.guildId) {
             throw new Error(`Unknown payload received.`);
+        }
         const player = this.players.get(payload.guildId);
-        if (!player || !player?.queue?.current)
+        if (!player || !player?.queue?.current) {
             return;
+        }
         const track = player.queue.current?.info;
-        if (!track)
+        if (!track) {
             return;
+        }
         const type = payload?.type;
         if (!type) {
             const error = new Error(`Unknown node event '${type}'.`);
             this.emit("nodeError", this, error);
         }
-        if (type === "TrackStartEvent") {
-            player.event.TrackStartEvent(player, track, payload);
-        }
-        else if (type === "TrackEndEvent") {
-            player.event.TrackEndEvent(player, track, payload);
-        }
-        else if (type === "TrackStuckEvent") {
-            player.event.TrackStuckEvent(player, track, payload);
-        }
-        else if (type === "TrackExceptionEvent") {
-            player.event.TrackExceptionEvent(player, track, payload);
-        }
-        else if (type === "WebSocketClosedEvent") {
-            player.event.WebSocketClosedEvent(player, payload);
-        }
         else {
-            const error = new Error(`${config_json_1.client_name} :: unknown node event '${type}'.`);
-            this.emit(Events_1.default.nodeError, this, error);
+            switch (type) {
+                case "TrackStartEvent":
+                    player.event.TrackStartEvent(player, track, payload);
+                    break;
+                case "TrackEndEvent":
+                    player.event.TrackEndEvent(player, track, payload);
+                    break;
+                case "TrackStuckEvent":
+                    player.event.TrackStuckEvent(player, track, payload);
+                    break;
+                case "TrackExceptionEvent":
+                    player.event.TrackExceptionEvent(player, track, payload);
+                    break;
+                case "WebSocketClosedEvent":
+                    player.event.WebSocketClosedEvent(player, payload);
+                    break;
+                default:
+                    const error = new Error(`${config_json_1.client_name} :: unknown node event '${type}'.`);
+                    this.emit(Events_1.default.nodeError, this, error);
+                    break;
+            }
         }
     }
+    /**
+    * Searches: (tracks, playlists, albums), with additional supported souces: (youtube & youtube music, spotify, soundcloud)
+    * @param - param.query<String> or param<String>,
+    * @param - requester - executors or the bot itself
+    * @returns the searched songs
+   */
     async search(param, requester = this.client.user) {
         if (!this.isInitiated)
             throw new Error("Blue has not been initiated yet.");
-        let data_copy = {};
-        data_copy.tracks = [];
-        data_copy.requester = requester;
+        const data_copy = { tracks: [], loadType: Types_1.default.LOAD_EMPTY, requester };
         if (!this.nodes?.has(this.options.host))
             throw new Error("No nodes are available.");
-        let data = await this.load.fetch(param);
-        if (!data || data?.loadType === Types_1.default.LOAD_ERROR || data?.loadType === Types_1.default.LOAD_EMPTY) {
+        const data = await this.load.fetch(param).catch(() => null);
+        if (!data || [Types_1.default.LOAD_ERROR, Types_1.default.LOAD_EMPTY].includes(data.loadType))
             throw new Error("No tracks found.");
-        }
-        else if (data.loadType === Types_1.default.LOAD_SEARCH || data.loadType === Types_1.default.LOAD_PLAYLIST) {
-            if (Array.isArray(data.data)) {
-                for (let i = 0; i < data.data.length; i++) {
-                    const track = new Track_1.default(data.data[i]);
-                    data_copy.tracks[i] = track;
-                }
-            }
-            else {
-                for (let i = 0; i < data.data.tracks.length; i++) {
-                    const track = new Track_1.default(data.data.tracks[i]);
-                    data_copy.tracks[i] = track;
-                }
-            }
-        }
-        else if (data.loadType === Types_1.default.LOAD_TRACK) {
-            const track = new Track_1.default(data.data);
-            data_copy.tracks[0] = track;
-        }
-        else if (data.loadType === Types_1.default.LOAD_SP_TRACK) {
-            if (data.tracks.length === 1) {
-                data_copy.tracks[0] = new Track_1.default(data.tracks[0]);
-            }
-            else {
-                data_copy.tracks = [...data.tracks];
-            }
-        }
-        else {
-            data_copy = { ...data, requester: requester };
+        switch (data.loadType) {
+            case Types_1.default.LOAD_SEARCH:
+            case Types_1.default.LOAD_PLAYLIST:
+                data_copy.tracks = (Array.isArray(data.data) ? data.data : data.data.tracks)
+                    .map(trackData => new Track_1.default(trackData));
+                break;
+            case Types_1.default.LOAD_TRACK:
+                data_copy.tracks.push(new Track_1.default(data.data));
+                break;
+            case Types_1.default.LOAD_SP_TRACK:
+                data_copy.tracks = data.tracks.length === 1 ? [new Track_1.default(data.tracks[0])] : data.tracks.map(trackData => new Track_1.default(trackData));
+                break;
+            default:
+                Object.assign(data_copy, { ...data, requester });
         }
         data_copy.loadType = data.loadType;
         return data_copy;
     }
 }
 exports.default = Blue;
+/**
+* This project (Lavalink client - blue.ts) has been
+* officially developed by
+* Rapture, Under ISC LICENSE
+* open pr if you find any bug
+*/
 //# sourceMappingURL=Blue.js.map

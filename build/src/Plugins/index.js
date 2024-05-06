@@ -4,6 +4,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Loader = void 0;
-const Loaders_1 = __importDefault(require("./Loaders"));
-exports.Loader = Loaders_1.default;
+/**
+ * Exporting the default Loader from the Loaders module
+ * */
+var Loaders_1 = require("./Loaders");
+Object.defineProperty(exports, "Loader", { enumerable: true, get: function () { return __importDefault(Loaders_1).default; } });
 //# sourceMappingURL=index.js.map

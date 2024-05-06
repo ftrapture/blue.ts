@@ -1,19 +1,74 @@
 import WebSocket from 'ws';
 import RestManager from "../Manager/RestManager";
 import '../Utils/Color';
-declare class Node {
-    readonly blue: any;
-    node: any;
-    sessionId: string | null;
-    connected: boolean;
+import Util from "../Utils/Util";
+import { Options, NodeOptions, SearchManager, ClientOption, Libs, VoiceUpdatePayloads, Player } from "../Blue";
+/**
+ * Interface for the Blue class
+ */
+export interface Blue {
+    nodes: Map<string, Node>;
+    _options: Options;
     options: any;
+    version: string;
+    node: Node | null;
+    load: SearchManager;
+    readonly _nodes: NodeOptions[];
+    util: Util;
+    client: ClientOption;
+    voiceState: VoiceUpdatePayloads;
+    players: Map<string, Player>;
+    _versions: string[];
+    send: (...args: any) => any;
+    Lib: Libs;
+    initiated: boolean;
+    on: (...args: any) => any;
+    once: (...args: any) => any;
+    off: (...args: any) => any;
+    emit: (...args: any) => any;
+    search: (...args: any) => any;
+    handleEvents: (...args: any) => void;
+}
+/**
+ * Class definition for the Node class
+ */
+declare class Node<T extends Blue = Blue> {
+    /**
+   * Instance of the blue client
+   */
+    readonly blue: T;
+    /**
+     * Node options
+     */
+    node: NodeOptions;
+    /**
+     * Session ID
+     */
+    sessionId: string | null;
+    /**
+     * Connection status
+     */
+    connected: boolean;
+    /**
+     * Options
+     */
+    options: Options;
+    /**
+     * Node information
+     */
     info: {
         host: string;
         port: number;
         secure: boolean;
         password: string;
     };
+    /**
+     * Connection attempt count
+     */
     count: number;
+    /**
+     * Node stats
+     */
     stats: {
         frameStats: any;
         players: number;
@@ -31,17 +86,60 @@ declare class Node {
             lavalinkLoad: number;
         };
     };
+    /**
+     * Player update interval
+     */
     playerUpdate: number;
+    /**
+     * Rest manager
+     */
     rest: RestManager;
-    resumeKey: string | null;
+    /**
+     * Resume key
+     */
+    resumeKey: number | string | null;
+    /**
+     * WebSocket connection
+     */
     ws: WebSocket | null;
-    constructor(blue: any, node: any, options: any);
+    /**
+     * Constructor for the Node class
+     * @param blue - The blue client instance
+     * @param node - Node options
+     * @param options - Options
+     */
+    constructor(blue: T, node: NodeOptions, options: Options);
+    /**
+     * Method to connect to the Lavalink node
+     */
     connect(): void;
-    disconnect(): void | this;
+    /**
+     * Method to disconnect from the Lavalink node
+     * @returns - Returns the instance of the Node class or void
+     */
+    disconnect(): this | void;
+    /**
+     * Method to check if connected to the Lavalink node
+     * @returns - Returns true if connected, false otherwise
+     */
     isConnected(): boolean;
-    open(): void;
-    close(): void;
-    message(payload: string): Promise<void>;
-    error(err: Error): void;
+    /**
+     * Event handler for successful WebSocket connection
+     */
+    private open;
+    /**
+     * Event handler for WebSocket disconnection
+     */
+    private close;
+    /**
+     * Event handler for receiving WebSocket messages
+     * @param payload - The payload received
+     */
+    private message;
+    /**
+     * Event handler for WebSocket errors
+     * @param err - The error received
+     */
+    private error;
 }
 export default Node;

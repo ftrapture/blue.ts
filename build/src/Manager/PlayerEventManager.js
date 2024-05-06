@@ -4,12 +4,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const Events_1 = __importDefault(require("../Utils/Events"));
+/**
+ * Class to handle player events
+ */
 class PlayerEvent {
+    /**
+     * Player instance
+     */
     player;
+    /**
+     * Function to send data
+     */
     send;
+    /**
+     * Constructor
+     */
     constructor(player) {
         this.player = player;
     }
+    /**
+     * Handle TrackStart event
+     */
     TrackStartEvent(player, track, payload) {
         if (!player)
             return;
@@ -17,6 +32,9 @@ class PlayerEvent {
         this.player.paused = false;
         this.player.blue.emit(Events_1.default.trackStart, player, track, payload);
     }
+    /**
+     * Handle TrackEnd event
+     */
     TrackEndEvent(player, track, payload) {
         if (payload?.reason === "replaced")
             return;
@@ -49,18 +67,27 @@ class PlayerEvent {
             this.player.blue.emit(Events_1.default.queueEnd, player, track, payload);
         }
     }
+    /**
+     * Handle TrackStuck event
+     */
     TrackStuckEvent(player, track, payload) {
         this.player.playing = false;
         if (!player)
             return;
         this.player.blue.emit(Events_1.default.trackError, player, track, payload);
     }
+    /**
+     * Handle TrackException event
+     */
     TrackExceptionEvent(player, track, payload) {
         this.player.playing = false;
         if (!player)
             return;
         this.player.blue.emit(Events_1.default.trackError, player, track, payload);
     }
+    /**
+     * Handle WebSocketClosed event
+     */
     WebSocketClosedEvent(player, payload) {
         if ([4015, 4009].includes(payload.code)) {
             this.send({

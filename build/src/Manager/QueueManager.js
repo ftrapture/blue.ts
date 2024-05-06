@@ -1,11 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * Queue class represents a queue data structure for storing Track objects.
+ */
 class Queue {
-    buffer;
-    head;
-    tail;
-    previous;
-    current;
+    buffer; // Array to store Track objects
+    head; // Index of the first element in the queue
+    tail; // Index of the next available position in the queue
+    previous; // Reference to the previously played track
+    current; // Reference to the currently playing track
+    /**
+     * Constructor to initialize the Queue object.
+     */
     constructor() {
         this.buffer = [];
         this.head = 0;
@@ -13,11 +19,21 @@ class Queue {
         this.previous = null;
         this.current = null;
     }
+    /**
+     * Add one or more elements to the end of the queue.
+     * @param elements One or more Track objects to add to the queue.
+     * @returns The updated Queue object.
+     */
     add(...elements) {
         this.buffer.push(...elements);
         this.tail += elements.length;
         return this;
     }
+    /**
+     * Remove the element at the specified index from the queue.
+     * @param index The index of the element to remove.
+     * @returns The removed Track object.
+     */
     remove(index) {
         if (this.isEmpty() || index < 0 || index >= this.size()) {
             return null;
@@ -31,16 +47,28 @@ class Queue {
         }
         return removedElement;
     }
+    /**
+     * Get the first element of the queue.
+     * @returns The first Track object in the queue.
+     */
     first() {
         if (this.isEmpty())
             return null;
         return this.buffer[this.head];
     }
+    /**
+     * Get the last element of the queue.
+     * @returns The last Track object in the queue.
+     */
     last() {
         if (this.isEmpty())
             return null;
         return this.buffer[this.tail - 1];
     }
+    /**
+     * Remove and return the last element of the queue.
+     * @returns The removed Track object.
+     */
     pop() {
         if (this.isEmpty())
             return null;
@@ -53,9 +81,18 @@ class Queue {
         }
         return poppedElement;
     }
+    /**
+     * Remove and return the first element of the queue.
+     * @returns The removed Track object.
+     */
     shift() {
         return this.remove(0);
     }
+    /**
+     * Add one or more elements to the beginning of the queue.
+     * @param elements One or more Track objects to add to the queue.
+     * @returns The new size of the queue.
+     */
     unshift(...elements) {
         this.buffer.unshift(...elements);
         this.head = 0;

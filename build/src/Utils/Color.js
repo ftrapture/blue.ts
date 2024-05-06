@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TextColor = void 0;
+/**
+ * Enum representing text colors for console output.
+ */
 var TextColor;
 (function (TextColor) {
     TextColor["Black"] = "\u001B[30m";

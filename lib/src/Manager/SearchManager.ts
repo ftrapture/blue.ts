@@ -3,21 +3,8 @@ import YoutubeEngine from "../Platforms/Youtube";
 import SoundcloudEngine from "../Platforms/SoundCloud";
 import SpotifyEngine from "../Platforms/Spotify";
 import Types from "../Utils/Types";
-import TrackStructure from "../Structure/Track";
-
-interface Blue {
-  nodes: any;
- _options: any;
-  options: any;
-  version: string;
-  node: any;
-  load: any;
-  _nodes: any[];
-  util: any;
-  client: any;
-  voiceState: any;
-  players: Map<string, any>;
-}
+import { Blue } from "../Connectors/Node";
+import Methods from "../Utils/Methods";
 
 interface Youtube extends YoutubeEngine {
     blue: Blue;
@@ -37,12 +24,20 @@ interface Spotify extends SpotifyEngine {
     queue: any;
 }
 
+/**
+ * Search class for handling search operations.
+ */
 class Search {
     public readonly blue: Blue;
-    public readonly  youtube: Youtube;
-    public readonly  spotify: Spotify;
-    public readonly  soundcloud: Soundcloud;
+    public readonly youtube: Youtube;
+    public readonly spotify: Spotify;
+    public readonly soundcloud: Soundcloud;
     public source: string;
+
+    /**
+     * Constructs a new Search instance.
+     * @param blue - The Blue instance.
+     */
     constructor(blue: any) {
         this.blue = blue;
         this.youtube = new YoutubeEngine(this.blue);
@@ -51,6 +46,11 @@ class Search {
         this.source = this.blue.options.defaultSearchEngine;
     }
 
+    /**
+     * Fetches data based on the provided parameter.
+     * @param param - The parameter to fetch data.
+     * @returns A promise resolving to any.
+     */
     async fetch(param: any) {
         const query = typeof param === "string" ? param : param?.query || null;
         if (!query) return null;
@@ -65,12 +65,22 @@ class Search {
       
         return this.handleNonUrlQuery(query);
       }
-      
+
+    /**
+     * Checks if a given string is a valid URL.
+     * @param query - The string to check.
+     * @returns True if the string is a valid URL, false otherwise.
+     */
       private isValidUrl(query: string): boolean {
         const urlRegex = /(?:https?|ftp):\/\/[\n\S]+/gi;
         return urlRegex.test(query);
       }
-      
+
+    /**
+     * Handles a URL query.
+     * @param query - The URL query.
+     * @returns A promise resolving to any.
+     */
       private async handleUrlQuery(query: string) {
         const spotifyEntityInfo = await this.spotify.getSpotifyEntityInfo(query).catch(() => null);
       
@@ -110,7 +120,12 @@ class Search {
       
         return (await this.fetchRawData(`${this.blue.version}/loadtracks`, `identifier=${encodeURIComponent(query)}`));
       }
-      
+
+    /**
+     * Handles a non-URL query.
+     * @param query - The non-URL query.
+     * @returns A promise resolving to any.
+     */
       private async handleNonUrlQuery(query: string) {
         let data: any;
         switch (this.source) {
@@ -134,7 +149,7 @@ class Search {
                 tracks.data[i].info.isrc = data.info.isrc;
                 tracks.data[i].type = data.type;
                 tracks.data[i].info.uri = data.info.uri;
-                builtTracks.push(new TrackStructure(tracks.data[i]));
+                builtTracks.push(tracks.data[i]);
              }
              
               return {
@@ -149,13 +164,18 @@ class Search {
       
         return data;
       }
-      
 
+    /**
+     * Fetches raw data from the specified endpoint.
+     * @param endpoint - The endpoint to fetch from.
+     * @param identifier - The identifier for the data.
+     * @returns A promise resolving to any.
+     */
     async fetchRawData(endpoint: string, identifier: string) {
         try {
                 const url = `http${this.blue.options.secure ? "s" : ""}://${this.blue.options.host}:${this.blue.options.port}/${endpoint}?${identifier}`;
                 const response = await fetch(url, {
-                    method: "GET",
+                    method: Methods.Get,
                     headers: {
                         "Content-Type": "application/json",
                         'Authorization': this.blue.options.password
@@ -174,7 +194,6 @@ class Search {
             );
         }
     }
-
 }
 
 export default Search;

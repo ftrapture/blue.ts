@@ -1,10 +1,18 @@
-class Queue {
-    public buffer: any[];
-    public head: number;
-    public tail: number;
-    public previous: any | null;
-    public current: any | null;
+import Track from "../Structure/Track";
 
+/**
+ * Queue class represents a queue data structure for storing Track objects.
+ */
+class Queue {
+    public buffer: Track[]; // Array to store Track objects
+    public head: number; // Index of the first element in the queue
+    public tail: number; // Index of the next available position in the queue
+    public previous: Track | null; // Reference to the previously played track
+    public current: Track | null; // Reference to the currently playing track
+
+    /**
+     * Constructor to initialize the Queue object.
+     */
     constructor() {
         this.buffer = [];
         this.head = 0;
@@ -13,13 +21,23 @@ class Queue {
         this.current = null;
     }
 
-    add(...elements: any[]) {
+    /**
+     * Add one or more elements to the end of the queue.
+     * @param elements One or more Track objects to add to the queue.
+     * @returns The updated Queue object.
+     */
+    public add(...elements: Track[]): this {
         this.buffer.push(...elements);
         this.tail += elements.length;
         return this;
     }
 
-    remove(index: number) {
+    /**
+     * Remove the element at the specified index from the queue.
+     * @param index The index of the element to remove.
+     * @returns The removed Track object.
+     */
+    public remove(index: number): Track {
         if (this.isEmpty() || index < 0 || index >= this.size()) {
             return null;
         }
@@ -33,17 +51,29 @@ class Queue {
         return removedElement;
     }
 
-    first() {
+    /**
+     * Get the first element of the queue.
+     * @returns The first Track object in the queue.
+     */
+    public first(): Track {
         if (this.isEmpty()) return null;
         return this.buffer[this.head];
     }
 
-    last() {
+    /**
+     * Get the last element of the queue.
+     * @returns The last Track object in the queue.
+     */
+    public last(): Track {
         if (this.isEmpty()) return null;
         return this.buffer[this.tail - 1];
     }
 
-    pop() {
+    /**
+     * Remove and return the last element of the queue.
+     * @returns The removed Track object.
+     */
+    public pop(): Track {
         if (this.isEmpty()) return null;
         const poppedElement = this.buffer.pop();
         this.tail--;
@@ -55,18 +85,27 @@ class Queue {
         return poppedElement;
     }
 
-    shift() {
+    /**
+     * Remove and return the first element of the queue.
+     * @returns The removed Track object.
+     */
+    public shift(): Track {
         return this.remove(0);
     }
 
-    unshift(...elements: any[]) {
+    /**
+     * Add one or more elements to the beginning of the queue.
+     * @param elements One or more Track objects to add to the queue.
+     * @returns The new size of the queue.
+     */
+    public unshift(...elements: any[]): number {
         this.buffer.unshift(...elements);
         this.head = 0;
         this.tail = this.buffer.length;
         return this.size();
     }
 
-    slice(start: number, end: number) {
+    public slice(start: number, end: number): Queue {
         if (start < 0) {
             start = this.size() + start;
         }
@@ -82,7 +121,7 @@ class Queue {
         return slicedQueue;
     }
 
-    splice(start: number, deleteCount: number, ...elements: any[]) {
+    public splice(start: number, deleteCount: number, ...elements: any[]): Track[] {
         if (start < 0) {
             start = this.size() + start;
         }
@@ -95,35 +134,35 @@ class Queue {
         return deletedElements;
     }
 
-    toArray() {
+    public toArray(): Track[] {
         return this.buffer.slice(this.head, this.tail);
     }
 
-    shuffle() {
+    public shuffle(): void {
         for (let i = this.size() - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [this.buffer[this.head + i], this.buffer[this.head + j]] = [this.buffer[this.head + j], this.buffer[this.head + i]];
         }
     }
 
-    clear() {
+    public clear(): void {
         this.buffer = [];
         this.head = 0;
         this.tail = 0;
     }
 
-    get(index: number) {
+    public get(index: number): Track {
         if (index < 0 || index >= this.size()) {
             throw new Error("Index out of bounds");
         }
         return this.buffer[this.head + index];
     }
 
-    size() {
+    public size(): number {
         return this.tail - this.head;
     }
 
-    isEmpty() {
+    public isEmpty(): boolean {
         return this.size() === 0;
     }
 }
