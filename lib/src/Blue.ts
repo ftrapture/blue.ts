@@ -561,6 +561,6 @@ export default Blue;
  /**
  * This project (Lavalink client - blue.ts) has been
  * officially developed by
- * Rapture, Under ISC LICENSE
+ * Rapture, Under MIT LICENSE
  * open pr if you find any bug
 */
