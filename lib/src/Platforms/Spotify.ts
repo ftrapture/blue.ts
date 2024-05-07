@@ -32,6 +32,7 @@ class Spotify {
     public readonly base64Auth: string;
     public readonly baseUrl: string;
     public accessToken: string;
+    public interval: number;
     public readonly queue: Queue;
 
     /**
@@ -46,7 +47,42 @@ class Spotify {
         this.baseUrl = "https://api.spotify.com/v1/";
         this.accessToken = "";
         this.queue = new Queue();
+        this.interval = 0;
         this.initialize();
+    }
+    
+    /**
+     * Initializes the Spotify instance by obtaining an access token.
+     * @returns A promise resolving to void.
+     */
+    public async initialize(): Promise<void> {
+        try {
+            const response = await axios.post(
+                'https://accounts.spotify.com/api/token',
+                'grant_type=client_credentials',
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': `Basic ${this.base64Auth}`,
+                    },
+                }
+            ).catch(() => null);
+
+            if(!response?.data) return null;
+            this.accessToken = response.data.access_token;
+            this.interval = response.data.expires_in * 1000;
+        } catch (error) {
+            throw error;
+        }
+    }
+    
+    /**
+     * Refreshes the access token of spotify
+     */
+    public async refresh(): Promise<void> {
+        if (Date.now() >= this.interval) {
+          await this.initialize();
+        }
     }
     
     /**
@@ -57,6 +93,7 @@ class Spotify {
      */
     public async search(query: string, type: string = "track"): Promise<TrackStructure | Error> {
         try {
+            await this.refresh();
             const response = await axios.get(
                 `${this.baseUrl}search?q=${encodeURIComponent(query)}&type=${type}`,
                 {
@@ -80,31 +117,6 @@ class Spotify {
             throw error; 
         }
     }
-
-    /**
-     * Initializes the Spotify instance by obtaining an access token.
-     * @returns A promise resolving to void.
-     */
-    public async initialize(): Promise<void> {
-        try {
-            const response = await axios.post(
-                'https://accounts.spotify.com/api/token',
-                'grant_type=client_credentials',
-                {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Authorization': `Basic ${this.base64Auth}`,
-                    },
-                }
-            ).catch(() => null);
-
-            if(!response?.data) return null;
-
-            this.accessToken = response.data.access_token;
-        } catch (error) {
-            throw error;
-        }
-    }
     
     /**
      * Retrieves information about a Spotify entity (track, album, or playlist) from its URL.
@@ -113,6 +125,7 @@ class Spotify {
      */
     public async getSpotifyEntityInfo(url: string): Promise<any> {
         try {
+            await this.refresh();
             const regex = /https?:\/\/open\.spotify\.com\/(playlist|album|track|artist)\/([a-zA-Z0-9]+)(\?si=[a-zA-Z0-9]+)?/;
             const match = url.match(regex);
     
@@ -311,6 +324,8 @@ class Spotify {
      * @returns an array of build tracks of spotify recommendations.
      */
     public async getRecommendations(currentTrackId: string): Promise<any> {
+      try {
+        await this.refresh();
         const response = await axios.get(`${this.baseUrl}recommendations?seed_tracks=${currentTrackId}`, {
             headers: {
                 'Authorization': `Bearer ${this.accessToken}`
@@ -328,7 +343,10 @@ class Spotify {
                 type: "recommend_track"
             })));
         });
-        return recommendations
+        return recommendations;
+      } catch(e) {
+        return null;
+      }
     }
 
     /**
