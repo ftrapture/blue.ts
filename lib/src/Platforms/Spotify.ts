@@ -323,7 +323,7 @@ class Spotify {
      * @param currentTrackId - id of the spotify tracks.
      * @returns an array of build tracks of spotify recommendations.
      */
-    public async getRecommendations(currentTrackId: string): Promise<any> {
+    public async getRecommendations(currentTrackId: string): Promise<TrackStructure[] | null> {
       try {
         await this.refresh();
         const response = await axios.get(`${this.baseUrl}recommendations?seed_tracks=${currentTrackId}`, {
