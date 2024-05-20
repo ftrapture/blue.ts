@@ -2,6 +2,7 @@ import axios from "axios";
 import Queue from "../Manager/QueueManager";
 import TrackStructure from "../Structure/Track";
 import { Blue } from "../Connectors/Node";
+import Types from "../Utils/Types";
 /**
  * Interface representing a track.
  */
@@ -19,7 +20,7 @@ export interface Track {
         artworkUrl: string | null | undefined,
         isrc: string | number | null | undefined,
     },
-    type: string
+    type: Types
 }
 
 /**

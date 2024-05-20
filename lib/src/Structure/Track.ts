@@ -1,4 +1,5 @@
 import { Track } from "../Platforms/Spotify";
+import Types from "../Utils/Types"
 
 /**
  * TrackStructure class for structuring track information.
@@ -28,7 +29,7 @@ class TrackStructure {
     /**
      * The type of the track.
      */
-    public type: string;
+    public type: Types;
 
     /**
      * Constructs a new TrackStructure instance.
