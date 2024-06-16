@@ -1,5 +1,5 @@
 import { Track } from "../Platforms/Spotify";
-
+import { Info } from "./SearchLoader";
 /**
  * TrackStructure class for structuring track information.
  */
@@ -7,40 +7,30 @@ class TrackStructure {
     /**
      * The token representing the track.
      */
-    public trackToken: string;
+    public encoded: string | unknown;
 
     /**
      * Information about the track.
      */
-    public info: {
-        identifier: string | null | undefined,
-        author: string | null | undefined,
-        duration: number | null | undefined,
-        isStream: boolean | null | undefined,
-        title: string | null | undefined,
-        thumbnail: string | null | undefined,
-        uri: string | null | undefined,
-        sourceName: string | null | undefined,
-        position: number | null | undefined,
-        isrc: string | number | null | undefined,
-    };
+    public info: Info;
 
     /**
      * The type of the track.
      */
-    public type: string;
+    public type?: string;
 
     /**
      * Constructs a new TrackStructure instance.
      * @param track - The track object.
      */
     constructor(track: Track) {
-        this.trackToken = track.encoded;
+        this.encoded = track.encoded;
         this.info = {
             identifier: track.info.identifier,
             author: track.info.author,
             duration: track.info.length,
-            thumbnail: track.info.artworkUrl,
+            artworkUrl: track.info.artworkUrl,
+            isSeekable: track.info.isSeekable,
             uri: track.info.uri,
             isStream: track.info.isStream,
             sourceName: track.info.sourceName,
@@ -48,7 +38,7 @@ class TrackStructure {
             isrc: track.info.isrc,
             title: track.info.title,
         }
-        this.type = track.type;
+        this.type = track.type || "none";
     }
 }
 

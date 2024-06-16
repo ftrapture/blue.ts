@@ -103,7 +103,7 @@ class Rest {
      * @param payload - The payload.
      * @returns A promise resolving to any.
      */
-    public async updateSession(sessionId: string, payload: any): Promise<any> {
+    public async updateSession(sessionId: string | unknown, payload: any): Promise<any> {
         return (await this.patch(`/${this.blue.version}/sessions/${sessionId}`, payload)); 
     }
 

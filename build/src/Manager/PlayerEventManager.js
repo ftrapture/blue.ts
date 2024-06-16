@@ -13,10 +13,6 @@ class PlayerEvent {
      */
     player;
     /**
-     * Function to send data
-     */
-    send;
-    /**
      * Constructor
      */
     constructor(player) {
@@ -27,7 +23,7 @@ class PlayerEvent {
      */
     TrackStartEvent(player, track, payload) {
         if (!player)
-            return;
+            return null;
         this.player.playing = true;
         this.player.paused = false;
         this.player.blue.emit(Events_1.default.trackStart, player, track, payload);
@@ -36,10 +32,8 @@ class PlayerEvent {
      * Handle TrackEnd event
      */
     TrackEndEvent(player, track, payload) {
-        if (payload?.reason === "replaced")
-            return;
         if (!player)
-            return;
+            return null;
         this.player.queue.previous = this.player.queue.current;
         this.player.queue.current = null;
         if (this.player.loop === "track") {
@@ -54,8 +48,7 @@ class PlayerEvent {
         }
         if (this.player.queue.size() === 0) {
             this.player.playing = false;
-            if (this.player.blue.options.autoplay)
-                this.player.autoplay();
+            this.player.blue.options.autoplay && this.player.autoplay();
             return this.player.blue.emit(Events_1.default.queueEnd, player, track, payload);
         }
         else if (this.player.queue.size() > 0) {
@@ -73,7 +66,7 @@ class PlayerEvent {
     TrackStuckEvent(player, track, payload) {
         this.player.playing = false;
         if (!player)
-            return;
+            return null;
         this.player.blue.emit(Events_1.default.trackError, player, track, payload);
     }
     /**
@@ -82,21 +75,19 @@ class PlayerEvent {
     TrackExceptionEvent(player, track, payload) {
         this.player.playing = false;
         if (!player)
-            return;
+            return null;
         this.player.blue.emit(Events_1.default.trackError, player, track, payload);
     }
     /**
      * Handle WebSocketClosed event
      */
     WebSocketClosedEvent(player, payload) {
-        if ([4015, 4009].includes(payload.code)) {
-            this.send({
-                guild_id: this.player.guildId,
-                channel_id: this.player.voiceChannel,
-                self_mute: this.player.options?.selfMute || false,
-                self_deaf: this.player.options?.selfDeaf || false,
-            });
-        }
+        [4015, 4009].includes(payload.code) && this.player.send({
+            guild_id: this.player.guildId,
+            channel_id: this.player.voiceChannel,
+            self_mute: this.player.options?.selfMute || false,
+            self_deaf: this.player.options?.selfDeaf || false,
+        });
         this.player.blue.emit(Events_1.default.playerDisconnect, player, payload);
     }
 }

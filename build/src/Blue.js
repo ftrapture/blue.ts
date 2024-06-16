@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_events_1 = require("node:events");
-const config_json_1 = require("./config.json");
 const voiceStateUpdate_1 = __importDefault(require("./Connectors/voiceStateUpdate"));
 const Util_1 = __importDefault(require("./Utils/Util"));
 const Types_1 = __importDefault(require("./Utils/Types"));
@@ -82,6 +81,10 @@ class Blue extends node_events_1.EventEmitter {
    */
     initiated;
     /**
+     * Blocked Platforms
+     */
+    blocked_platforms;
+    /**
     * A parameterized constructor,
     * This is the main class which actually handles the lavalink server and calls all the neccesary methods when needed.
     * Usage - new Blue(nodes<Array>, options<DefaultOptions>);
@@ -103,6 +106,7 @@ class Blue extends node_events_1.EventEmitter {
         this.initiated = false;
         this.voiceState = new voiceStateUpdate_1.default(this);
         this.players = new Map();
+        this.blocked_platforms = [];
     }
     /**
     * @returns a boolean state, to indicate whether it has been initiated or not
@@ -242,16 +246,48 @@ class Blue extends node_events_1.EventEmitter {
         }
     }
     /**
+     * @param <Platforms[String]>
+     * @returns <Platforms>[String] | <Platforms>[]
+     */
+    setBlockPlatforms(platforms) {
+        if (!platforms.length || !platforms.find(p => Object.keys(this.util.platforms).includes(p.toLowerCase())))
+            return "Platforms does not match.";
+        this.blocked_platforms = platforms;
+        return this.blocked_platforms;
+    }
+    /**
+     * @param <Platforms[String]>
+     * @returns <Platforms>[String] | <Platforms>[]
+     */
+    removeBlockPlatforms(platforms) {
+        if (!platforms.length)
+            return this.blocked_platforms;
+        this.blocked_platforms = this.blocked_platforms.filter(p => !platforms.includes(p));
+        return this.blocked_platforms;
+    }
+    /**
+     * @returns <Platforms>[String] | <Platforms>[]
+     */
+    getBlockPlatforms() {
+        return this.blocked_platforms;
+    }
+    /**
     * Removes a node,
     * @param - node,
     * @returns either error or boolean statement
    */
-    removeNode(node) {
-        if (!node.info?.host || !node.info?.password || !node.info?.port) {
+    removeNode(option) {
+        if (!option["host" && "port" && "password"]) {
             throw new Error("Provide valid node to remove");
         }
-        node.disconnect();
-        return this.nodes.delete(node.info?.host);
+        this._nodes = this._nodes.filter(n => [...this.activeNodes()].map(d => d.host).includes(n.host));
+        const node = this.nodes.get(option["host"]);
+        if (node) {
+            node.disconnect();
+            return this.nodes.delete(option["host"]);
+        }
+        else
+            return false;
     }
     /**
     * Updates a node,
@@ -294,8 +330,7 @@ class Blue extends node_events_1.EventEmitter {
         }
         const type = payload?.type;
         if (!type) {
-            const error = new Error(`Unknown node event '${type}'.`);
-            this.emit("nodeError", this, error);
+            this.emit("nodeError", this, new Error(`Unknown node event '${type}'.`));
         }
         else {
             switch (type) {
@@ -315,8 +350,7 @@ class Blue extends node_events_1.EventEmitter {
                     player.event.WebSocketClosedEvent(player, payload);
                     break;
                 default:
-                    const error = new Error(`${config_json_1.client_name} :: unknown node event '${type}'.`);
-                    this.emit(Events_1.default.nodeError, this, error);
+                    this.emit(Events_1.default.nodeError, this, new Error(`Unknown node event '${type}'.`));
                     break;
             }
         }
@@ -330,7 +364,14 @@ class Blue extends node_events_1.EventEmitter {
     async search(param, requester = this.client.user) {
         if (!this.isInitiated)
             throw new Error("Blue has not been initiated yet.");
-        const data_copy = { tracks: [], loadType: Types_1.default.LOAD_EMPTY, requester };
+        let data_copy = {
+            tracks: [],
+            loadType: Types_1.default.LOAD_EMPTY,
+            requester,
+            playlistInfo: {},
+            userData: {},
+            pluginInfo: {}
+        };
         if (!this.nodes?.has(this.options.host))
             throw new Error("No nodes are available.");
         const data = await this.load.fetch(param).catch(() => null);
@@ -343,15 +384,26 @@ class Blue extends node_events_1.EventEmitter {
                     .map(trackData => new Track_1.default(trackData));
                 break;
             case Types_1.default.LOAD_TRACK:
-                data_copy.tracks.push(new Track_1.default(data.data));
-                break;
-            case Types_1.default.LOAD_SP_TRACK:
-                data_copy.tracks = data.tracks.length === 1 ? [new Track_1.default(data.tracks[0])] : data.tracks.map(trackData => new Track_1.default(trackData));
+                data_copy.tracks = (Array.isArray(data.data) ? [new Track_1.default(data.data[0])] : [new Track_1.default(data.data)]);
                 break;
             default:
-                Object.assign(data_copy, { ...data, requester });
+                data_copy.tracks = (Array.isArray(data.data) ? data.data : data.data.tracks);
         }
+        if (data.data.playlistInfo)
+            data_copy.playlistInfo = data.data.playlistInfo || {};
+        if (data.data.info)
+            data_copy.playlistInfo = data.data.info || {};
+        if (data.data.userData)
+            data_copy.userData = data.data.userData || {};
+        if (data.data.pluginInfo)
+            data_copy.pluginInfo = data.data.pluginInfo || {};
         data_copy.loadType = data.loadType;
+        if (data.data)
+            delete data.data;
+        data_copy = {
+            ...data_copy,
+            ...data
+        };
         return data_copy;
     }
 }
@@ -359,7 +411,7 @@ exports.default = Blue;
 /**
 * This project (Lavalink client - blue.ts) has been
 * officially developed by
-* Rapture, Under ISC LICENSE
+* Rapture, Under MIT LICENSE
 * open pr if you find any bug
 */
 //# sourceMappingURL=Blue.js.map

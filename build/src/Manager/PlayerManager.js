@@ -7,6 +7,7 @@ const QueueManager_1 = __importDefault(require("./QueueManager"));
 const Events_1 = __importDefault(require("../Utils/Events"));
 const PlayerEventManager_1 = __importDefault(require("./PlayerEventManager"));
 const FilterManager_1 = __importDefault(require("./FilterManager"));
+const Track_1 = __importDefault(require("../Structure/Track"));
 const Types_1 = __importDefault(require("../Utils/Types"));
 /**
  * Player class
@@ -17,6 +18,8 @@ class Player {
     playing;
     queue;
     position;
+    ping;
+    timestamp;
     connected;
     paused;
     createdTimestamp;
@@ -40,8 +43,10 @@ class Player {
         this.playing = false;
         this.queue = new QueueManager_1.default();
         this.position = 0;
+        this.ping = -1;
         this.connected = false;
         this.paused = false;
+        this.timestamp = 0;
         this.createdTimestamp = Date.now();
         this.createdAt = new Date();
         this.guildId = options.guildId || null;
@@ -82,10 +87,7 @@ class Player {
         if (!this.queue.current?.info?.identifier)
             return this;
         const datas = this.queue.current;
-        if (["album_track", "recommend_track", "playlist_track"].includes(this.queue.current?.type)) {
-            this.queue.current = await this.search();
-            await this.updateTrackInfo(datas);
-        }
+        await this.additionalSource(datas);
         try {
             this.playing = true;
             this.position = 0;
@@ -95,7 +97,7 @@ class Player {
                 guildId: this.guildId,
                 noReplace: options?.noReplace || false,
                 data: {
-                    track: { encoded: this.queue.current?.trackToken || null },
+                    track: { encoded: this.queue.current?.encoded || null },
                     volume: adjustedVolume
                 },
             });
@@ -115,15 +117,21 @@ class Player {
             return null;
         return data.tracks[0];
     }
+    async additionalSource(datas) {
+        if (this.queue.current?.type && this.queue.current?.info?.sourceName && ["album_track", "recommend_track", "playlist_track"].includes(this.queue.current.type) && this.blue.util.platforms[this.queue.current.info.sourceName.toLowerCase()]) {
+            this.queue.current = await this.search();
+            await this.updateTrackInfo(datas);
+        }
+    }
     /**
      * Connect function
      */
-    connect() {
+    connect(options) {
         this.send({
-            guild_id: this.guildId,
-            channel_id: this.voiceChannel,
-            self_deaf: this.selfDeaf,
-            self_mute: this.selfMute,
+            guild_id: options?.guildId || this.guildId,
+            channel_id: (options?.voiceChannel || options?.voiceChannel === null) ? options.voiceChannel : this.voiceChannel,
+            self_deaf: options?.selfDeaf || this.selfDeaf,
+            self_mute: options?.selfMute || this.selfMute,
         });
         this.connected = true;
     }
@@ -168,18 +176,20 @@ class Player {
             self_mute: false,
             self_deaf: false,
         });
-        this.voiceChannel = null;
-        this.options["voiceChannel"] = null;
-        this.blue.node.rest.destroyPlayer(this.guildId);
-        this.blue.emit(Events_1.default.playerDisconnect, this);
-        this.blue.players.delete(this.guildId);
+        this.options["voiceChannel"] = this.voiceChannel = null;
+        this.options["textChannel"] = this.textChannel = null;
+        this.options["guildId"] = this.guildId = null;
         return this;
     }
     /**
      * Destroy function
      */
     destroy() {
-        return this.disconnect();
+        this.blue.node.rest.destroyPlayer(this.guildId);
+        this.blue.emit(Events_1.default.playerDisconnect, this);
+        this.blue.players.delete(this.guildId);
+        this.disconnect();
+        return this;
     }
     /**
      * Pause function
@@ -211,8 +221,8 @@ class Player {
     setVoiceChannel(channel, options) {
         if (typeof channel !== "string")
             throw new TypeError(`'channel' must be contain only channel id.`);
-        if (this.isConnected() && channel == this.voiceChannel)
-            throw new ReferenceError(`Player is already created and connected to ${channel}`);
+        if (!this.isConnected())
+            throw new ReferenceError(`Im not connected to the voice channel.`);
         this.voiceChannel = channel;
         this.options["voiceChannel"] = this.voiceChannel;
         if (options) {
@@ -268,6 +278,43 @@ class Player {
         return this;
     }
     /**
+     * reconnects to the playback
+     * @returns Player
+     */
+    async reconnect() {
+        if (!this.queue.current && this.queue.isEmpty())
+            return this;
+        await this.blue.node.rest.updatePlayer({
+            guildId: this.guildId,
+            data: {
+                position: this.position,
+                track: this.rawTrackBuild(this.queue.current),
+            },
+        });
+        return this;
+    }
+    ;
+    rawTrackBuild(track) {
+        if (track.encoded) {
+            return {
+                encoded: track.encoded,
+                info: {
+                    identifier: track.info.identifier,
+                    author: track.info.author,
+                    length: track.info.duration,
+                    artworkUrl: track.info.thumbnail,
+                    uri: track.info.uri,
+                    isStream: track.info.isStream,
+                    sourceName: track.info.sourceName,
+                    position: track.info.position,
+                    isrc: track.info.isrc,
+                    title: track.info.title,
+                }
+            };
+        }
+        return new Track_1.default(track);
+    }
+    /**
      * Autoplay function
      */
     async autoplay() {
@@ -279,7 +326,7 @@ class Player {
             const data = `https://www.youtube.com/watch?v=${this.queue.previous?.info?.identifier || this.queue.current?.info?.identifier}&list=RD${this.queue.previous.info.identifier || this.queue.current.info.identifier}`;
             const response = await this.blue.search({ query: data }).catch(() => null);
             if (!response || !response.tracks?.length)
-                throw new Error("Track not found, for autoplay.");
+                return this.rawAutoplay();
             response.tracks.shift();
             const track = response.tracks[Math.floor(Math.random() * Math.floor(response.tracks.length))];
             this.queue.add(track);
@@ -299,16 +346,15 @@ class Player {
             const search = await this.blue.load.spotify.search(this.queue.current?.info?.title || this.queue.previous?.info?.title).catch(() => null);
             if (!search)
                 throw new Error("Track not found, for autoplay.");
-            const res = await this.blue.load.spotify.getRecommendations(search?.info?.identifier);
-            if (!res?.length)
+            const res = await this.blue.load.spotify.getRecommendations(search?.info?.identifier).catch(() => null);
+            if (!res || !res.data?.tracks || !res.data.tracks.length)
                 throw new Error("Track not found, for autoplay.");
-            const track = res[Math.floor(Math.random() * Math.floor(res.length))];
+            const track = res.data.tracks[Math.floor(Math.random() * Math.floor(res.data.tracks.length))];
             this.queue.add(track);
             await this.play();
             return this;
         }
         catch (e) {
-            console.log(e);
             return (await this.destroy());
         }
     }

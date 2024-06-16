@@ -13,7 +13,7 @@ export interface Blue {
     version: string;
     node: Node | null;
     load: SearchManager;
-    readonly _nodes: NodeOptions[];
+    _nodes: NodeOptions[];
     util: Util;
     client: ClientOption;
     voiceState: VoiceUpdatePayloads;
@@ -21,6 +21,7 @@ export interface Blue {
     _versions: string[];
     send: (...args: any) => any;
     Lib: Libs;
+    blocked_platforms: string[];
     initiated: boolean;
     on: (...args: any) => any;
     once: (...args: any) => any;
@@ -28,6 +29,8 @@ export interface Blue {
     emit: (...args: any) => any;
     search: (...args: any) => any;
     handleEvents: (...args: any) => void;
+    addNode: (arg?: NodeOptions | NodeOptions[]) => void;
+    activeNodes: () => NodeOptions[];
 }
 /**
  * Class definition for the Node class
@@ -91,13 +94,17 @@ declare class Node<T extends Blue = Blue> {
      */
     playerUpdate: number;
     /**
+     * Player Autoresume
+     */
+    autoResume: boolean;
+    /**
      * Rest manager
      */
     rest: RestManager;
     /**
      * Resume key
      */
-    resumeKey: number | string | null;
+    resumeKey: string | unknown;
     /**
      * WebSocket connection
      */
@@ -112,7 +119,7 @@ declare class Node<T extends Blue = Blue> {
     /**
      * Method to connect to the Lavalink node
      */
-    connect(): void;
+    connect(): Promise<void>;
     /**
      * Method to disconnect from the Lavalink node
      * @returns - Returns the instance of the Node class or void

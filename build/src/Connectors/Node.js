@@ -50,6 +50,10 @@ class Node {
      */
     playerUpdate;
     /**
+     * Player Autoresume
+     */
+    autoResume;
+    /**
      * Rest manager
      */
     rest;
@@ -74,6 +78,7 @@ class Node {
         this.sessionId = null;
         this.connected = false;
         this.options = options;
+        this.autoResume = this.options?.autoResume || false;
         this.info = {
             host: this.node.host,
             port: this.node.port,
@@ -98,7 +103,7 @@ class Node {
                 lavalinkLoad: 0
             }
         };
-        this.playerUpdate = this.options?.playerUpdateInterval || 50;
+        this.playerUpdate = this.options?.playerUpdateInterval || 60;
         this.rest = new RestManager_1.default(this.blue);
         this.resumeKey = !!this.options?.resumeKey ? this.options.resumeKey : null;
         this.ws = null;
@@ -106,13 +111,13 @@ class Node {
     /**
      * Method to connect to the Lavalink node
      */
-    connect() {
+    async connect() {
         // Setting headers for WebSocket connection
         const headers = {
             "Authorization": this.info.password,
             "Client-Name": config_json_1.client_name,
             "User-Id": this.blue.client.user.id,
-            "User-Agent": `${config_json_1.client_name}:${config_json_2.default.version} (${config_json_2.default.repository.url})`
+            "User-Agent": `${config_json_1.client_name}/${config_json_2.default.version} (${config_json_2.default.repository.url})`
         };
         if (this.resumeKey)
             headers["Session-Id"] = this.resumeKey;
@@ -163,9 +168,10 @@ class Node {
             this.count = 0;
             return this.ws.close();
         }
+        if (this.blue._nodes.length > 1)
+            return this.blue._nodes = this.blue._nodes.filter(n => [...this.blue.activeNodes()].map(d => d.host).includes(n.host));
         const timeout = setTimeout(() => {
-            if (this.blue.nodes.get(this.info.host))
-                this.connect();
+            this.blue.nodes.get(this.info.host) && this.connect();
             clearTimeout(timeout);
         }, 5000);
     }
@@ -190,15 +196,32 @@ class Node {
                 this.sessionId = packet.sessionId;
                 this.blue.emit(Events_1.default.api, `[${String("DEBUG").Blue()}]: ${this.info.host} ---> [${String("RECEIVED: READY PAYLOAD").Green()}] ---> ${String(`${JSON.stringify(packet)}`).Yellow()}`);
                 this.rest.setSession(this.sessionId || "none");
-                if (this.resumeKey) {
-                    await this.rest.patch(`/v4/sessions/${this.sessionId}`, { resuming: !!this.resumeKey || false, timeout: this.playerUpdate });
-                }
+                console.log(this.blue.players);
+                this.autoResume && this.blue.players.forEach((player) => {
+                    try {
+                        if (player.blue.node === this && player.connected && player.queue.current) {
+                            const { selfDeaf, selfMute, guildId } = player.options;
+                            player.connect({
+                                voiceChannel: null,
+                                guildId: guildId,
+                                selfDeaf: selfDeaf,
+                                selfMute: selfMute
+                            });
+                            player.connect();
+                            player.reconnect();
+                        }
+                    }
+                    catch (e) { }
+                });
+                this.resumeKey && await this.rest.updateSession(this.resumeKey, { resuming: !!this.resumeKey, timeout: this.playerUpdate });
                 break;
             case "playerUpdate":
                 const player = this.blue.players.get(packet?.guildId);
-                if (player) {
-                    this.blue.emit(Events_1.default.playerUpdate, player, player?.queue?.current?.info);
+                if (player && packet.state) {
                     player.position = packet.state.position || 0;
+                    player.ping = packet.state.ping || -1;
+                    player.timestamp = packet.state.timestamp || 0;
+                    this.blue.emit(Events_1.default.playerUpdate, player, player?.queue?.current?.info);
                 }
                 break;
             default:

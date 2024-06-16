@@ -10,6 +10,9 @@ const Methods_1 = __importDefault(require("../Utils/Methods"));
  */
 class Youtube {
     blue;
+    requestQueue = [];
+    isProcessingQueue = false;
+    rateLimitDelay = 1000; // Delay in milliseconds between requests to avoid rate limiting.
     /**
      * Constructs a new Youtube instance.
      * @param blue - The Blue instance.
@@ -18,30 +21,63 @@ class Youtube {
         this.blue = blue;
     }
     /**
+     * Adds a request to the queue and processes the queue.
+     * @param requestFn - The request function to add to the queue.
+     */
+    async addToQueue(requestFn) {
+        this.requestQueue.push(requestFn);
+        if (!this.isProcessingQueue) {
+            this.processQueue();
+        }
+    }
+    /**
+     * Processes the request queue with a delay between requests.
+     */
+    async processQueue() {
+        this.isProcessingQueue = true;
+        while (this.requestQueue.length > 0) {
+            const requestFn = this.requestQueue.shift();
+            if (requestFn) {
+                try {
+                    await requestFn();
+                }
+                catch (error) {
+                    console.error(error); // Log the error
+                }
+                await new Promise(resolve => setTimeout(resolve, this.rateLimitDelay));
+            }
+        }
+        this.isProcessingQueue = false;
+    }
+    /**
      * Searches for tracks on YouTube.
      * @param query - The query to search for.
      * @param type - The type of search (default is "ytmsearch").
      * @returns A promise resolving to any or an Error.
      */
     async search(query, type = "ytmsearch") {
-        try {
-            const url = `http${this.blue.options.secure ? "s" : ""}://${this.blue.options.host}:${this.blue.options.port}/${this.blue.version}/loadtracks?identifier=${encodeURIComponent(`${type}:${query}`)}`;
-            const response = await (0, undici_1.fetch)(url, {
-                method: Methods_1.default.Get,
-                headers: {
-                    "Content-Type": "application/json",
-                    'Authorization': this.blue.options.password
+        return new Promise((resolve, reject) => {
+            this.addToQueue(async () => {
+                try {
+                    const url = `http${this.blue.options.secure ? "s" : ""}://${this.blue.options.host}:${this.blue.options.port}/${this.blue.version}/loadtracks?identifier=${encodeURIComponent(`${type}:${query}`)}`;
+                    const response = await (0, undici_1.fetch)(url, {
+                        method: Methods_1.default.Get,
+                        headers: {
+                            "Content-Type": "application/json",
+                            'Authorization': this.blue.options.password
+                        }
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch data: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    resolve(data);
+                }
+                catch (error) {
+                    reject(error);
                 }
             });
-            if (!response.ok) {
-                throw new Error(`Failed to fetch data: ${response.statusText}`);
-            }
-            const data = await response.json();
-            return data;
-        }
-        catch (error) {
-            throw error;
-        }
+        });
     }
 }
 exports.default = Youtube;

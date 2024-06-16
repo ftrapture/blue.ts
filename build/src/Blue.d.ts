@@ -58,6 +58,7 @@ export interface Options {
     playerUpdateInterval?: number | null;
     resumeKey?: number | string | null;
     spotify?: SpotifyOptions;
+    autoResume: boolean;
     plugins?: Loader[];
 }
 /**
@@ -82,6 +83,8 @@ export interface Player {
     paused: boolean;
     createdTimestamp: number;
     createdAt: Date;
+    ping: number;
+    timestamp: number;
     guildId: string | null;
     voiceChannel: string | null;
     textChannel: string | null;
@@ -91,8 +94,11 @@ export interface Player {
     options: PlayerOptions;
     loop: Loop;
     event: PlayerEvent;
-    connect?: (...args: any) => any;
+    connect?: (...args: any) => void;
+    disconnect?: () => any;
+    destroy?: () => any;
     setVoiceChannel?: (...args: any) => any;
+    reconnect?: () => Promise<any>;
 }
 /**
 * extended NodeManager class and exported as an interface
@@ -128,8 +134,9 @@ export interface Node extends NodeManager {
     };
     playerUpdate: number;
     rest: RestManager;
-    resumeKey: string | number | null;
+    resumeKey: string | unknown;
     ws: WebSocket | null;
+    autoResume: boolean;
 }
 /**
 * player create constructor options
@@ -210,7 +217,7 @@ declare class Blue extends EventEmitter {
     /**
     * all nodes are to be stored in an single array
    */
-    readonly _nodes: any[];
+    _nodes: any[];
     /**
     * Utility and all the methods are stored in here
    */
@@ -243,6 +250,10 @@ declare class Blue extends EventEmitter {
     * Initiated indicates the main method has been called or not
    */
     initiated: boolean;
+    /**
+     * Blocked Platforms
+     */
+    blocked_platforms: string[];
     /**
     * A parameterized constructor,
     * This is the main class which actually handles the lavalink server and calls all the neccesary methods when needed.
@@ -304,17 +315,31 @@ declare class Blue extends EventEmitter {
    */
     addNode(node: NodeOptions | NodeOptions[]): void;
     /**
+     * @param <Platforms[String]>
+     * @returns <Platforms>[String] | <Platforms>[]
+     */
+    setBlockPlatforms(platforms: string[]): string[] | string;
+    /**
+     * @param <Platforms[String]>
+     * @returns <Platforms>[String] | <Platforms>[]
+     */
+    removeBlockPlatforms(platforms: string[]): string[];
+    /**
+     * @returns <Platforms>[String] | <Platforms>[]
+     */
+    getBlockPlatforms(): string[];
+    /**
     * Removes a node,
     * @param - node,
     * @returns either error or boolean statement
    */
-    removeNode(node: any): boolean | Error;
+    removeNode(option: any): boolean | Error;
     /**
     * Updates a node,
     * @param - node,
     * @returns either error or boolean statement
    */
-    updateNode(node: NodeOptions): Node | NodeOptions[] | Error;
+    updateNode(node?: NodeOptions): Node | NodeOptions[] | Error;
     /**
     * Handles all the events,
     * @param - Payloads,
@@ -330,6 +355,9 @@ declare class Blue extends EventEmitter {
     search(param: Params | string, requester?: any): Promise<{
         tracks: TrackManager[];
         loadType: string;
+        pluginInfo: any;
+        userData: any;
+        playlistInfo: any;
         requester: Requester;
     }>;
 }
@@ -337,6 +365,6 @@ export default Blue;
 /**
 * This project (Lavalink client - blue.ts) has been
 * officially developed by
-* Rapture, Under ISC LICENSE
+* Rapture, Under MIT LICENSE
 * open pr if you find any bug
 */

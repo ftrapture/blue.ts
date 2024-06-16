@@ -4,11 +4,23 @@ import { Blue } from "../Connectors/Node";
  */
 declare class Youtube {
     readonly blue: Blue;
+    private requestQueue;
+    private isProcessingQueue;
+    private rateLimitDelay;
     /**
      * Constructs a new Youtube instance.
      * @param blue - The Blue instance.
      */
     constructor(blue: any);
+    /**
+     * Adds a request to the queue and processes the queue.
+     * @param requestFn - The request function to add to the queue.
+     */
+    private addToQueue;
+    /**
+     * Processes the request queue with a delay between requests.
+     */
+    private processQueue;
     /**
      * Searches for tracks on YouTube.
      * @param query - The query to search for.

@@ -7,23 +7,22 @@ const Node_1 = __importDefault(require("../Connectors/Node"));
 const config_json_1 = require("../config.json");
 const Libs_1 = __importDefault(require("./Libs"));
 /**
- * Supported platforms with their corresponding search types.
- */
-const supportedPlatforms = {
-    "youtube": "ytsearch",
-    "youtube music": "ytmsearch",
-    "soundcloud": "scsearch"
-};
-/**
  * Utility class for various operations.
  */
 class Util {
     blue;
+    platforms;
     /**
      * Constructs a new Util instance.
      * @param blue - The Blue object.
      */
     constructor(blue) {
+        this.platforms = {
+            "youtube": "ytsearch",
+            "youtube music": "ytmsearch",
+            "soundcloud": "scsearch",
+            "spotify": "spsearch"
+        };
         this.blue = blue;
     }
     /**
@@ -45,20 +44,22 @@ class Util {
             if (!packet.host || !packet.password || !packet.port || !Object.keys(packet).includes("secure")) {
                 throw new Error("Invalid parameters passed in bluets constructor.");
             }
-            this.blue.node = new Node_1.default(this.blue, packet, defaultPackets);
+            const node = new Node_1.default(this.blue, packet, defaultPackets);
+            await node.connect();
             this.blue.version = typeof defaultPackets.version === "string" ? await this.blue.verifyVersion(defaultPackets.version) : "v4";
-            this.blue.node.connect();
+            if (!this.blue.node || !node.isConnected())
+                this.blue.node = node;
         }
         const defaultSearchEngine = defaultPackets.defaultSearchEngine;
-        if (defaultSearchEngine && !supportedPlatforms[defaultSearchEngine]) {
-            throw new Error(`Available search engines are: ${Object.keys(supportedPlatforms).join(", ")} or keep it blank.`);
+        if (defaultSearchEngine && !this.platforms[defaultSearchEngine]) {
+            throw new Error(`Available search engines are: ${Object.keys(this.platforms).join(", ")} or keep it blank.`);
         }
         this.blue.options = {
-            host: nodePackets[0].host,
-            password: nodePackets[0].password,
-            port: nodePackets[0].port,
-            secure: nodePackets[0].secure,
-            defaultSearchEngine: defaultSearchEngine ? supportedPlatforms[defaultSearchEngine] || config_json_1.default_platform : config_json_1.default_platform,
+            host: this.blue?.node?.info?.host || nodePackets[0].host,
+            password: this.blue?.node?.info?.password || nodePackets[0].password,
+            port: this.blue?.node?.info?.port || nodePackets[0].port,
+            secure: this.blue?.node?.info?.secure || nodePackets[0].secure,
+            defaultSearchEngine: defaultSearchEngine ? this.platforms[defaultSearchEngine] || config_json_1.default_platform : config_json_1.default_platform,
             autoplay: defaultPackets.autoplay || false,
             library: defaultPackets.library,
         };

@@ -106,7 +106,7 @@ class VoiceUpdate {
    * @param data - Voice state data
    */
   public setVoiceStateUpdate(data: any): void {
-    if (!data?.endpoint) return this.blue.emit(Events.nodeError, data, new Error(`${client_name} error :: Unable to fetch the endpoint to connect to the voice channel!`));
+    if (!data || !data.endpoint) return this.blue.emit(Events.nodeError, data, new Error(`${client_name} error :: Unable to fetch the endpoint to connect to the voice channel!`));
     if (!this.voice.sessionId) return this.blue.emit(Events.nodeError, this, new Error(`${client_name} error :: Unable to fetch the sessionId to connect to the voice channel!`));
     this.voice.token = data.token;
     this.voice.endpoint = data.endpoint;
@@ -114,7 +114,6 @@ class VoiceUpdate {
       guildId: this.guildId!,
       data: { voice: this.voice },
     });
-    this.blue.emit(Events.debug, this.blue.options.host, new Error(`${client_name} :: Voice State Updated | Region: ${this.region}, Guild ID: ${this.guildId}, Session ID: ${this.voice.sessionId}`));
   }
 }
 

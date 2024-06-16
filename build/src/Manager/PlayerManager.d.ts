@@ -69,6 +69,8 @@ declare class Player {
     playing: boolean;
     queue: Queue;
     position: number;
+    ping: number;
+    timestamp: number;
     connected: boolean;
     paused: boolean;
     createdTimestamp: number;
@@ -102,10 +104,13 @@ declare class Player {
      * Search function
      */
     private search;
+    private additionalSource;
     /**
      * Connect function
      */
-    connect(): void;
+    connect(options?: {
+        [key: string]: string | boolean | unknown;
+    }): void;
     /**
      * Send function
      */
@@ -129,7 +134,7 @@ declare class Player {
     /**
      * Pause function
      */
-    pause(pause?: boolean): this;
+    pause(pause?: boolean): this | TypeError;
     /**
      * Set loop function
      */
@@ -137,19 +142,25 @@ declare class Player {
     /**
      * Set voice channel function
      */
-    setVoiceChannel(channel: string, options: VoiceConnection): this;
+    setVoiceChannel(channel: string, options: VoiceConnection): this | TypeError;
     /**
      * Set text channel function
      */
-    setTextChannel(channel: string): this;
+    setTextChannel(channel: string): this | TypeError;
     /**
      * Set volume function
      */
-    setVolume(integer?: number): this;
+    setVolume(integer?: number): this | RangeError;
     /**
      * Seek function
      */
-    seek(position: string | number): this;
+    seek(position: string | number): this | RangeError;
+    /**
+     * reconnects to the playback
+     * @returns Player
+     */
+    reconnect(): Promise<this>;
+    private rawTrackBuild;
     /**
      * Autoplay function
      */

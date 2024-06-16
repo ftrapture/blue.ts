@@ -26,6 +26,9 @@ declare class Search {
     readonly spotify: Spotify;
     readonly soundcloud: Soundcloud;
     source: string;
+    private requestQueue;
+    private isProcessingQueue;
+    private rateLimitDelay;
     /**
      * Constructs a new Search instance.
      * @param blue - The Blue instance.
@@ -36,13 +39,18 @@ declare class Search {
      * @param param - The parameter to fetch data.
      * @returns A promise resolving to any.
      */
-    fetch(param: any): Promise<any>;
+    fetch(param: any): Promise<unknown | any>;
     /**
      * Checks if a given string is a valid URL.
      * @param query - The string to check.
      * @returns True if the string is a valid URL, false otherwise.
      */
     private isValidUrl;
+    /**
+     * @param url: URL
+     * @returns either true or false statement
+     */
+    private isBlockedUrl;
     /**
      * Handles a URL query.
      * @param query - The URL query.
@@ -56,11 +64,20 @@ declare class Search {
      */
     private handleNonUrlQuery;
     /**
+     * Adds a request to the queue and processes the queue.
+     * @param requestFn - The request function to add to the queue.
+     */
+    private addToQueue;
+    /**
+     * Processes the request queue with a delay between requests.
+     */
+    private processQueue;
+    /**
      * Fetches raw data from the specified endpoint.
      * @param endpoint - The endpoint to fetch from.
      * @param identifier - The identifier for the data.
      * @returns A promise resolving to any.
      */
-    fetchRawData(endpoint: string, identifier: string): Promise<unknown>;
+    fetchRawData(endpoint: string, identifier: string): Promise<any>;
 }
 export default Search;

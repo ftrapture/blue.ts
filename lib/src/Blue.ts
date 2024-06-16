@@ -74,7 +74,8 @@ export interface Options {
   playerUpdateInterval?: number | null;
   resumeKey?: number | string | null;
   spotify?: SpotifyOptions;
-  plugins?: Loader[]
+  autoResume: boolean;
+  plugins?: Loader[];
 }
 
  /** 
@@ -100,6 +101,8 @@ export interface Player {
     paused: boolean;
     createdTimestamp: number;
     createdAt: Date;
+    ping: number;
+    timestamp: number;
     guildId: string | null;
     voiceChannel: string | null;
     textChannel: string | null;
@@ -109,8 +112,11 @@ export interface Player {
     options: PlayerOptions;
     loop: Loop;
     event: PlayerEvent;
-    connect?: (...args: any) => any;
+    connect?: (...args: any) => void;
+    disconnect?: () => any;
+    destroy?: () => any;
     setVoiceChannel?: (...args: any) => any;
+    reconnect?: () => Promise<any>;
 }
 
  /**
@@ -147,10 +153,10 @@ export interface Node extends NodeManager {
   };
   playerUpdate: number;
   rest: RestManager;
-  resumeKey: string| number | null;
+  resumeKey: string | unknown;
   ws: WebSocket | null;
+  autoResume: boolean;
 }
-
 
  /**
  * player create constructor options
@@ -235,7 +241,7 @@ class Blue extends EventEmitter {
  /**
  * all nodes are to be stored in an single array
 */
-  public readonly _nodes: any[];
+  public _nodes: any[];
  /**
  * Utility and all the methods are stored in here
 */
@@ -269,6 +275,11 @@ class Blue extends EventEmitter {
  * Initiated indicates the main method has been called or not
 */
   public initiated: boolean;
+
+  /**
+   * Blocked Platforms
+   */
+  public blocked_platforms: string[];
  /**
  * A parameterized constructor,
  * This is the main class which actually handles the lavalink server and calls all the neccesary methods when needed.
@@ -290,6 +301,7 @@ class Blue extends EventEmitter {
     this.initiated = false;
     this.voiceState = new VoiceUpdate(this);
     this.players = new Map();
+    this.blocked_platforms = [];
   }
 
  /**
@@ -430,17 +442,48 @@ class Blue extends EventEmitter {
     }
   }
 
+  /**
+   * @param <Platforms[String]>
+   * @returns <Platforms>[String] | <Platforms>[]
+   */
+  public setBlockPlatforms(platforms: string[]): string[] | string {
+    if(!platforms.length || !platforms.find(p => Object.keys(this.util.platforms).includes(p.toLowerCase()))) return "Platforms does not match.";
+    this.blocked_platforms = platforms;
+    return this.blocked_platforms;
+  }
+
+  /**
+   * @param <Platforms[String]>
+   * @returns <Platforms>[String] | <Platforms>[]
+   */
+  public removeBlockPlatforms(platforms: string[]): string[] {
+    if(!platforms.length) return this.blocked_platforms;
+    this.blocked_platforms = this.blocked_platforms.filter(p => !platforms.includes(p));
+    return this.blocked_platforms;
+  }
+
+  /**
+   * @returns <Platforms>[String] | <Platforms>[]
+   */
+  public getBlockPlatforms(): string[] {
+    return this.blocked_platforms;
+  }
+
  /**
  * Removes a node,
  * @param - node,
  * @returns either error or boolean statement
 */
-  public removeNode(node: any): boolean | Error {
-    if (!node.info?.host || !node.info?.password || !node.info?.port) {
+  public removeNode(option: any): boolean | Error {
+    if (!option["host" && "port" && "password"]) {
       throw new Error("Provide valid node to remove");
     }
-    node.disconnect();
-    return this.nodes.delete(node.info?.host);
+    this._nodes = this._nodes.filter(n => [...this.activeNodes()].map(d => d.host).includes(n.host));
+    const node = this.nodes.get(option["host"]);
+    if(node) {
+      node.disconnect();
+      return this.nodes.delete(option["host"]);
+    } else return false;
   }
 
  /**
@@ -448,7 +491,7 @@ class Blue extends EventEmitter {
  * @param - node,
  * @returns either error or boolean statement
 */
-  public updateNode(node: NodeOptions): Node | NodeOptions[] | Error {
+  public updateNode(node?: NodeOptions): Node | NodeOptions[] | Error {
     if (node) {
       this.addNode(node);
       return this.nodes.get(this.node!.info["host"]);
@@ -486,8 +529,7 @@ class Blue extends EventEmitter {
 
     const type = payload?.type;
     if (!type) {
-        const error = new Error(`Unknown node event '${type}'.`);
-        this.emit("nodeError", this, error);
+        this.emit("nodeError", this, new Error(`Unknown node event '${type}'.`));
     } else {
         switch (type) {
             case "TrackStartEvent":
@@ -506,8 +548,7 @@ class Blue extends EventEmitter {
                 player.event.WebSocketClosedEvent(player, payload);
                 break;
             default:
-                const error = new Error(`${client_name} :: unknown node event '${type}'.`);
-                this.emit(Events.nodeError, this, error);
+                this.emit(Events.nodeError, this, new Error(`Unknown node event '${type}'.`));
                 break;
         }
     }
@@ -519,10 +560,24 @@ class Blue extends EventEmitter {
  * @param - requester - executors or the bot itself
  * @returns the searched songs
 */
-async search(param: Params | string, requester: any = this.client.user): Promise<{ tracks: TrackManager[], loadType: string, requester: Requester }> {
+public async search(param: Params | string, requester: any = this.client.user): Promise<{ tracks: TrackManager[], loadType: string, pluginInfo: any, userData: any, playlistInfo: any, requester: Requester }> {
   if (!this.isInitiated) throw new Error("Blue has not been initiated yet.");
 
-  const data_copy: { tracks: TrackManager[], loadType: string, requester: Requester } = { tracks: [], loadType: Types.LOAD_EMPTY, requester };
+  let data_copy: { 
+    tracks: TrackManager[], 
+    loadType: string, 
+    pluginInfo: any, 
+    userData: any, 
+    playlistInfo: any, 
+    requester: Requester 
+  } = { 
+    tracks: [], 
+    loadType: Types.LOAD_EMPTY, 
+    requester, 
+    playlistInfo: {}, 
+    userData: {}, 
+    pluginInfo: {} 
+  };
 
   if (!this.nodes?.has(this.options.host)) throw new Error("No nodes are available.");
 
@@ -538,18 +593,24 @@ async search(param: Params | string, requester: any = this.client.user): Promise
       break;
 
     case Types.LOAD_TRACK:
-      data_copy.tracks.push(new TrackManager(data.data));
-      break;
-
-    case Types.LOAD_SP_TRACK:
-      data_copy.tracks = data.tracks.length === 1 ? [new TrackManager(data.tracks[0])] : data.tracks.map(trackData => new TrackManager(trackData));
+      data_copy.tracks = (Array.isArray(data.data) ? [new TrackManager(data.data[0])] : [new TrackManager(data.data)]);
       break;
 
     default:
-      Object.assign(data_copy, { ...data, requester });
+      data_copy.tracks = (Array.isArray(data.data) ? data.data : data.data.tracks);
   }
-
+  
+  if(data.data.playlistInfo) data_copy.playlistInfo = data.data.playlistInfo || {};
+  if(data.data.info) data_copy.playlistInfo = data.data.info || {};
+  if(data.data.userData) data_copy.userData = data.data.userData || {};
+  if(data.data.pluginInfo) data_copy.pluginInfo = data.data.pluginInfo || {};
   data_copy.loadType = data.loadType;
+  if(data.data)
+  delete data.data
+  data_copy = {
+    ...data_copy,
+    ...data
+  }
   
   return data_copy;
 }

@@ -91,16 +91,21 @@ client.manager.on(Events.api, (data) => {
   console.log(data);
 });*/
 
+
 client.on("messageCreate", async (message) => {
   if (message.author.bot || !message.guild || !message.channel) return;
 
-  const prefix = ">";
+  const prefix = "?";
   let player = client.manager.players.get(message.guild.id);
 
   if (!message.content.toLowerCase().startsWith(prefix)) return;
 
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const cmd = args.shift()?.toLowerCase();
+
+  if(cmd == "ping") {
+    return message.reply(`Ping: ${client.ws.ping}`);
+  }
 
   if (cmd == "play") {
     if (!message.member?.voice.channel) return message.reply("you must be in a voice channel");
@@ -118,15 +123,16 @@ client.on("messageCreate", async (message) => {
         selfMute: false
       });
 
-    const res = await client.manager.search({ query: query, source: "spotify" }, message.author)
-    if (!res) return message.reply("song not found");
-    if (res.loadType == Types.LOAD_SP_ALBUMS || res.loadType == Types.LOAD_SP_PLAYLISTS) {
+    const res = await client.manager.search({ query: query, source: "youtube" }, message.author).catch(() => null);
+    if (!res || !res?.tracks?.length) return message.reply("song not found");
+    if (res.loadType == Types.LOAD_SP_ALBUMS || res.loadType == Types.LOAD_SP_PLAYLISTS || res.loadType == Types.LOAD_PLAYLIST) {
       player.queue.add(...res.tracks);
-      message.reply(`Loaded **${res.length}** tracks from \`${res.name}\``);
+      message.reply(`Loaded **${res.tracks.length}** tracks from \`${res.name || res.playlistInfo.name || "Unknown"}\``);
     } else {
       player.queue.add(res.tracks[0]);
       message.reply(`Track: **${res.tracks[0].info.title}** added to queue.`);
     }
+    
     if (!player.queue?.current)
       player.play();
       }
@@ -143,8 +149,26 @@ client.on("messageCreate", async (message) => {
 
   if (cmd == "stop") {
     if (!player || !player.isConnected) return message.reply("player not initialized yet.");
-    player.disconnect();
+    player.destroy();
     return message.reply("stopped the song, and left the vc");
+  }
+
+  if (cmd == "blockplatform") {
+    if(!args[0]) return message.reply("provide the platforms");
+    if(args[0].toLowerCase() === "set") {
+    const platforms = args.slice(1).map(a => a.toLowerCase());
+    client.manager.setBlockPlatforms([...platforms]);
+    return message.reply("ok sets the platforms to the blocked list.")
+    } else if(args[0].toLowerCase() === "get") {
+      const blocked = client.manager.getBlockPlatforms();
+      return message.reply(`Blocked Platforms: \`${blocked.length ? blocked.join(", ") : "None"}\``)
+    } else if(args[0].toLowerCase() === "remove") {
+     const platforms = args.slice(1).map(a => a.toLowerCase());
+      client.manager.removeBlockPlatforms([...platforms]);
+      return message.reply(`ok removed the platforms`)
+    } else {
+      return message.reply("provide the platforms");
+    }
   }
 
   if (cmd == "replay") {
@@ -175,6 +199,5 @@ client.on("messageCreate", async (message) => {
     return message.reply(`filters has been cleared`);
   }
 });
-
 
 client.login("CLIENT_SECRET"); //Discord Bot Token

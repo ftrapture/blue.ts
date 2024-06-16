@@ -1,6 +1,12 @@
 import { Blue } from "../Connectors/Node";
 import { Options as DefaultPackets, VoiceConnection as Options, NodeOptions as NodePacket } from "../Blue";
 /**
+ * Represents a platform.
+ */
+interface Platform {
+    [key: string]: string;
+}
+/**
  * Extends the Blue interface with additional method 'verifyVersion'.
  */
 interface BlueStruct extends Blue {
@@ -10,7 +16,8 @@ interface BlueStruct extends Blue {
  * Utility class for various operations.
  */
 declare class Util {
-    private blue;
+    blue: BlueStruct;
+    platforms: Platform;
     /**
      * Constructs a new Util instance.
      * @param blue - The Blue object.

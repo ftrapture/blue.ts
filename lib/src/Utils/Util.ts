@@ -12,15 +12,6 @@ interface Platform {
 }
 
 /**
- * Supported platforms with their corresponding search types.
- */
-const supportedPlatforms: Platform = {
-    "youtube": "ytsearch",
-    "youtube music": "ytmsearch",
-    "soundcloud": "scsearch"
-};
-
-/**
  * Extends the Blue interface with additional method 'verifyVersion'.
  */
 interface BlueStruct extends Blue {
@@ -31,13 +22,19 @@ interface BlueStruct extends Blue {
  * Utility class for various operations.
  */
 class Util {
-    private blue: BlueStruct;
-
+    public blue: BlueStruct;
+    public platforms: Platform
     /**
      * Constructs a new Util instance.
      * @param blue - The Blue object.
      */
     constructor(blue: BlueStruct) {
+        this.platforms = {
+            "youtube": "ytsearch",
+            "youtube music": "ytmsearch",
+            "soundcloud": "scsearch",
+            "spotify": "spsearch"
+        };
         this.blue = blue;
     }
 
@@ -63,22 +60,24 @@ class Util {
                 throw new Error("Invalid parameters passed in bluets constructor.");
             }
 
-            this.blue.node = new Node(this.blue, packet, defaultPackets);
+            const node = new Node(this.blue, packet, defaultPackets);
+            await node.connect();
             this.blue.version = typeof defaultPackets.version === "string" ? await this.blue.verifyVersion(defaultPackets.version) : "v4";
-            this.blue.node.connect();
+            if(!this.blue.node || !node.isConnected())
+                this.blue.node = node;
         }
 
         const defaultSearchEngine = defaultPackets.defaultSearchEngine;
-        if (defaultSearchEngine && !supportedPlatforms[defaultSearchEngine]) {
-            throw new Error(`Available search engines are: ${Object.keys(supportedPlatforms).join(", ")} or keep it blank.`);
+        if (defaultSearchEngine && !this.platforms[defaultSearchEngine]) {
+            throw new Error(`Available search engines are: ${Object.keys(this.platforms).join(", ")} or keep it blank.`);
         }
 
         this.blue.options = {
-            host: nodePackets[0].host,
-            password: nodePackets[0].password,
-            port: nodePackets[0].port,
-            secure: nodePackets[0].secure,
-            defaultSearchEngine: defaultSearchEngine ? supportedPlatforms[defaultSearchEngine] || default_platform : default_platform,
+            host: this.blue?.node?.info?.host || nodePackets[0].host,
+            password: this.blue?.node?.info?.password || nodePackets[0].password,
+            port: this.blue?.node?.info?.port || nodePackets[0].port,
+            secure: this.blue?.node?.info?.secure || nodePackets[0].secure,
+            defaultSearchEngine: defaultSearchEngine ? this.platforms[defaultSearchEngine] || default_platform : default_platform,
             autoplay: defaultPackets.autoplay || false,
             library: defaultPackets.library,
         };

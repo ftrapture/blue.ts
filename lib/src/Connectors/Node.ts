@@ -6,7 +6,6 @@ import '../Utils/Color';
 import Config from "../config.json";
 import Util from "../Utils/Util";
 import { Options, NodeOptions, SearchManager, ClientOption, Libs, VoiceUpdatePayloads, Player } from "../Blue";
-
 /**
  * Interface for the Blue class
  */
@@ -24,7 +23,7 @@ export interface Blue {
   // Search manager
   load: SearchManager; 
    // Readonly array of node options
-  readonly _nodes: NodeOptions[];
+  _nodes: NodeOptions[];
   // Utility functions
   util: Util; 
   // Client options
@@ -39,6 +38,8 @@ export interface Blue {
   send: (...args: any) => any; 
   // Library
   Lib: Libs; 
+  //Blocked Platforms
+  blocked_platforms: string[];
   // Initiation flag
   initiated: boolean; 
   // Event listener
@@ -53,6 +54,10 @@ export interface Blue {
   search: (...args: any) => any; 
   // Event handler
   handleEvents: (...args: any) => void; 
+  // Node Add
+  addNode: (arg?: NodeOptions | NodeOptions[]) => void;
+  //Returns active nodes
+  activeNodes: () => NodeOptions[];
 }
 
 /**
@@ -126,6 +131,11 @@ public stats: {
 public playerUpdate: number;
 
 /**
+ * Player Autoresume
+ */
+public autoResume: boolean;
+
+/**
  * Rest manager
  */
 public rest: RestManager;
@@ -133,7 +143,7 @@ public rest: RestManager;
 /**
  * Resume key
  */
-public resumeKey: number | string | null;
+public resumeKey: string | unknown;
 
 /**
  * WebSocket connection
@@ -153,6 +163,7 @@ public ws: WebSocket | null;
     this.sessionId = null;
     this.connected = false;
     this.options = options;
+    this.autoResume = this.options?.autoResume || false;
     this.info = {
       host: this.node.host,
       port: this.node.port,
@@ -177,7 +188,7 @@ public ws: WebSocket | null;
         lavalinkLoad: 0
       }
     };
-    this.playerUpdate = this.options?.playerUpdateInterval || 50;
+    this.playerUpdate = this.options?.playerUpdateInterval || 60;
     this.rest = new RestManager(this.blue);
     this.resumeKey = !!this.options?.resumeKey ? this.options.resumeKey : null;
     this.ws = null;
@@ -186,13 +197,13 @@ public ws: WebSocket | null;
   /**
    * Method to connect to the Lavalink node
    */
-  public connect(): void {
+  public async connect(): Promise<void> {
     // Setting headers for WebSocket connection
     const headers: any = {
       "Authorization": this.info.password,
       "Client-Name": client_name,
       "User-Id": this.blue.client.user.id,
-      "User-Agent": `${client_name}:${Config.version} (${Config.repository.url})`
+      "User-Agent": `${client_name}/${Config.version} (${Config.repository.url})`
     };
     if (this.resumeKey) headers["Session-Id"] = this.resumeKey;
     // Creating WebSocket connection
@@ -236,7 +247,7 @@ public ws: WebSocket | null;
   /**
    * Event handler for WebSocket disconnection
    */
-  private close(): void {
+  private close(): void | Node | NodeOptions[] | Error  {
     this.connected = false;
     this.blue.emit(Events.nodeDisconnect, this, `${client_name} ${this.info.host} :: node disconnected!`);
     this.blue.emit(Events.api, `[${String("DEBUG").Blue()}]: ${this.info.host} ---> [${String("CLOSING ERROR_CODE: 404 | 405").Red()}]`);
@@ -246,9 +257,10 @@ public ws: WebSocket | null;
       this.count = 0;
       return this.ws!.close();
     }
+    if(this.blue._nodes.length > 1)  
+      return this.blue._nodes = this.blue._nodes.filter(n => [...this.blue.activeNodes()].map(d => d.host).includes(n.host));
     const timeout = setTimeout(() => {
-      if (this.blue.nodes.get(this.info.host))
-        this.connect();
+      this.blue.nodes.get(this.info.host) && this.connect();
       clearTimeout(timeout);
     }, 5000);
   }
@@ -261,34 +273,51 @@ public ws: WebSocket | null;
     const packet = JSON.parse(payload);
     if (!packet?.op) return;
     switch (packet.op) {
-      case "stats":
-        this.stats = { ...packet };
-        this.blue.emit(Events.api, `[${String("DEBUG").Blue()}]: ${this.info.host} ---> [${String("RECEIVED: SYSTEM PAYLOAD").Green()}] ---> ${String(`${JSON.stringify(this.stats)}`).Yellow()}`);
-        break;
-      case "event":
-        this.blue.handleEvents(packet);
-        this.blue.emit(Events.api, `[${String("DEBUG").Blue()}]: ${this.info.host} ---> [${String("RECEIVED: EVENT PAYLOAD").Green()}] ---> ${String(`${JSON.stringify(packet)}`).Yellow()}`);
-        break;
-      case "ready":
-        this.sessionId = packet.sessionId;
-        this.blue.emit(Events.api, `[${String("DEBUG").Blue()}]: ${this.info.host} ---> [${String("RECEIVED: READY PAYLOAD").Green()}] ---> ${String(`${JSON.stringify(packet)}`).Yellow()}`);
-        this.rest.setSession(this.sessionId || "none");
-        if (this.resumeKey) {
-          await this.rest.patch(`/v4/sessions/${this.sessionId}`, { resuming: !!this.resumeKey || false, timeout: this.playerUpdate });
-        }
-        break;
-      case "playerUpdate":
-        const player = this.blue.players.get(packet?.guildId);
-        if (player) {
-          this.blue.emit(Events.playerUpdate, player, player?.queue?.current?.info);
-          player.position = packet.state.position || 0;
-        }
-        break;
-      default:
-        this.blue.emit(Events.nodeError, this, new Error(`Unexpected op "${(payload as any).op}" with data: ${payload}`));
-        return;
+        case "stats":
+            this.stats = { ...packet };
+            this.blue.emit(Events.api, `[${String("DEBUG").Blue()}]: ${this.info.host} ---> [${String("RECEIVED: SYSTEM PAYLOAD").Green()}] ---> ${String(`${JSON.stringify(this.stats)}`).Yellow()}`);
+            break;
+        case "event":
+            this.blue.handleEvents(packet);
+            this.blue.emit(Events.api, `[${String("DEBUG").Blue()}]: ${this.info.host} ---> [${String("RECEIVED: EVENT PAYLOAD").Green()}] ---> ${String(`${JSON.stringify(packet)}`).Yellow()}`);
+            break;
+        case "ready":
+            this.sessionId = packet.sessionId;
+            this.blue.emit(Events.api, `[${String("DEBUG").Blue()}]: ${this.info.host} ---> [${String("RECEIVED: READY PAYLOAD").Green()}] ---> ${String(`${JSON.stringify(packet)}`).Yellow()}`);
+            this.rest.setSession(this.sessionId || "none");
+            console.log(this.blue.players)
+            this.autoResume && this.blue.players.forEach((player: Player): void => {
+              try {
+              if(player.blue.node === this && player.connected && player.queue.current){
+                const { selfDeaf, selfMute,  guildId } = player.options;
+                player.connect({ 
+                  voiceChannel: null,
+                  guildId: guildId,
+                  selfDeaf: selfDeaf,
+                  selfMute: selfMute
+                });
+                player.connect();
+                player.reconnect();
+              }
+             } catch (e: any) {}
+            });
+            this.resumeKey && await this.rest.updateSession(this.resumeKey, { resuming: !!this.resumeKey, timeout: this.playerUpdate });
+            break;
+        case "playerUpdate":
+            const player = this.blue.players.get(packet?.guildId);
+            if (player && packet.state) {
+                player.position = packet.state.position || 0;
+                player.ping = packet.state.ping || -1;
+                player.timestamp = packet.state.timestamp || 0;
+                this.blue.emit(Events.playerUpdate, player, player?.queue?.current?.info);
+            }
+            break;
+        default:
+            this.blue.emit(Events.nodeError, this, new Error(`Unexpected op "${(payload as any).op}" with data: ${payload}`));
+            return;
     }
   }
+
 
   /**
    * Event handler for WebSocket errors

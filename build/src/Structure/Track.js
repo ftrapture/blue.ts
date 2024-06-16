@@ -7,7 +7,7 @@ class TrackStructure {
     /**
      * The token representing the track.
      */
-    trackToken;
+    encoded;
     /**
      * Information about the track.
      */
@@ -21,12 +21,13 @@ class TrackStructure {
      * @param track - The track object.
      */
     constructor(track) {
-        this.trackToken = track.encoded;
+        this.encoded = track.encoded;
         this.info = {
             identifier: track.info.identifier,
             author: track.info.author,
             duration: track.info.length,
-            thumbnail: track.info.artworkUrl,
+            artworkUrl: track.info.artworkUrl,
+            isSeekable: track.info.isSeekable,
             uri: track.info.uri,
             isStream: track.info.isStream,
             sourceName: track.info.sourceName,
@@ -34,7 +35,7 @@ class TrackStructure {
             isrc: track.info.isrc,
             title: track.info.title,
         };
-        this.type = track.type;
+        this.type = track.type || "none";
     }
 }
 exports.default = TrackStructure;

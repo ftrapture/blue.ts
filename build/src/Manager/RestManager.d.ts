@@ -57,7 +57,7 @@ declare class Rest {
      * @param payload - The payload.
      * @returns A promise resolving to any.
      */
-    updateSession(sessionId: string, payload: any): Promise<any>;
+    updateSession(sessionId: string | unknown, payload: any): Promise<any>;
     /**
      * Retrieves information.
      * @returns A promise resolving to any.
