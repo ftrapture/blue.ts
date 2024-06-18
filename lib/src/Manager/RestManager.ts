@@ -121,7 +121,7 @@ class Rest {
      * @returns A promise resolving to any.
      */
     public async decodeTrack(encoded: string): Promise<any> {
-        return (await this.get(`${this.blue.version}/decodetrack?encodedTrack=${encoded}`));
+        return (await this.get(`/${this.blue.version}/decodetrack?encodedTrack=${encodeURIComponent(encoded)}`));
     }
 
     /**
@@ -130,7 +130,7 @@ class Rest {
      * @returns A promise resolving to any.
      */
     public async decodeTracks(encoded: any[]): Promise<any> {
-        return (await this.patch(`${this.blue.version}/decodetracks`, encoded));
+        return (await this.post(`/${this.blue.version}/decodetracks`, encoded));
     }
 
     /**
