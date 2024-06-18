@@ -110,7 +110,7 @@ class Rest {
      * @returns A promise resolving to any.
      */
     async decodeTrack(encoded) {
-        return (await this.get(`${this.blue.version}/decodetrack?encodedTrack=${encoded}`));
+        return (await this.get(`/${this.blue.version}/decodetrack?encodedTrack=${encodeURIComponent(encoded)}`));
     }
     /**
      * Decodes multiple tracks.
@@ -118,7 +118,7 @@ class Rest {
      * @returns A promise resolving to any.
      */
     async decodeTracks(encoded) {
-        return (await this.patch(`${this.blue.version}/decodetracks`, encoded));
+        return (await this.post(`/${this.blue.version}/decodetracks`, encoded));
     }
     /**
      * Retrieves a player.
