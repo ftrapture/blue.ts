@@ -202,9 +202,9 @@ class Spotify {
     }
 
     public async ratelimitCheck(req: any): Promise<void> {
-        if (req.headers.get('x-ratelimit-remaining') === '0') {
+        if (req.headers['x-ratelimit-remaining'] === '0' || req.status === 429) {
             this.isRatelimited = true;
-            const delay = parseInt(req.headers.get('x-ratelimit-reset')) * 1000;
+            const delay = (parseInt(req.headers['x-ratelimit-reset']) || 60) * 1000;
             setTimeout(() => {
                 this.isRatelimited = false;
             }, delay);
