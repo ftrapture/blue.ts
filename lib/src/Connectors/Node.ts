@@ -285,7 +285,6 @@ public ws: WebSocket | null;
             this.sessionId = packet.sessionId;
             this.blue.emit(Events.api, `[${String("DEBUG").Blue()}]: ${this.info.host} ---> [${String("RECEIVED: READY PAYLOAD").Green()}] ---> ${String(`${JSON.stringify(packet)}`).Yellow()}`);
             this.rest.setSession(this.sessionId || "none");
-            console.log(this.blue.players)
             this.autoResume && this.blue.players.forEach((player: Player): void => {
               try {
               if(player.blue.node === this && player.connected && player.queue.current){
